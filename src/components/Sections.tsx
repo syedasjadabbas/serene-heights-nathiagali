@@ -128,8 +128,8 @@ export function Residences() {
       <div className="wrap" ref={ref}>
         <ChapterHead left="The residences" right="Three towers" />
         <div className="res-grid">
-          <figure className="r1 clip arch" data-reveal><img src="/media/approach.webp" srcSet={srcSet('/media/approach.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Arrival road leading to the tower entrance, lamp posts and pines" /><figcaption className="label">The arrival</figcaption></figure>
-          <figure className="r2 clip" data-reveal><img src="/media/terraces.webp" srcSet={srcSet('/media/terraces.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Balconies and rooftop glasshouse of the tower" /><figcaption className="label">Balconies on every floor</figcaption></figure>
+          <figure className="r1 clip arch" data-reveal><img src="/media/approach-dusk.webp" srcSet={srcSet('/media/approach-dusk.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Arrival road leading to the tower entrance, lamp posts and pines" /><figcaption className="label">The arrival</figcaption></figure>
+          <figure className="r2 clip" data-reveal><img src="/media/terraces-dusk.webp" srcSet={srcSet('/media/terraces-dusk.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Balconies and rooftop glasshouse of the tower" /><figcaption className="label">Balconies on every floor</figcaption></figure>
           <figure className="r3 clip" data-reveal><img src="/media/rooftop.webp" srcSet={srcSet('/media/rooftop.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Rooftop terraces at sunset over the forest" /><figcaption className="label">The rooftop at sunset</figcaption></figure>
         </div>
         <div className="res-intro">
