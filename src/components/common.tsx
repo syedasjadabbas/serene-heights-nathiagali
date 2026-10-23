@@ -2,6 +2,7 @@ import { Component, Fragment, Suspense, lazy, useEffect, useMemo, useRef, useSta
 import type { CanvasProps } from '@react-three/fiber'
 import { gsap, reducedMotion } from '../lib/scroll'
 import { hasWebGL } from '../lib/device'
+import { queuePremount } from '../lib/preload'
 
 const CanvasHost = lazy(() => import('../three/CanvasHost'))
 
@@ -12,9 +13,10 @@ class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode
   render() { return this.state.failed ? this.props.fallback : this.props.children }
 }
 
-// 3D canvas that loads the engine and its scene only when it nears the screen, renders only
-// while visible, and shows `fallback` (usually a render photo) on devices without WebGL.
-export function LazyCanvas<P extends object>({ scene, sceneProps, canvas = {}, fallback = null, warmup = '200px', eager = false }: {
+// 3D canvas that mounts either straight away (`eager`), in the background pre-mount queue
+// (`premount`, in order), or when it nears the screen, whichever comes first. It animates only
+// while visible and otherwise renders on demand. Devices without WebGL get `fallback`.
+export function LazyCanvas<P extends object>({ scene, sceneProps, canvas = {}, fallback = null, warmup = '200px', eager = false, premount }: {
   scene: ComponentType<P>
   sceneProps: P
   canvas?: Omit<CanvasProps, 'children'>
@@ -22,6 +24,8 @@ export function LazyCanvas<P extends object>({ scene, sceneProps, canvas = {}, f
   warmup?: string
   /** mount and render straight away (the hero), instead of waiting to near the screen */
   eager?: boolean
+  /** position in the background pre-mount queue (built after the hero, before the visitor scrolls) */
+  premount?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(eager)
@@ -37,12 +41,16 @@ export function LazyCanvas<P extends object>({ scene, sceneProps, canvas = {}, f
     io.observe(el)
     return () => io.disconnect()
   }, [warmup, supported])
+  useEffect(() => {
+    if (!supported || eager || premount === undefined) return
+    return queuePremount(premount, () => setMounted(true))
+  }, [supported, eager, premount])
   return (
     <div ref={ref} className="canvas-wrap" aria-hidden="true">
       {!supported ? fallback : mounted && (
         <SceneBoundary fallback={fallback}>
           <Suspense fallback={null}>
-            <CanvasHost scene={scene as ComponentType<object>} sceneProps={sceneProps} canvas={canvas} frameloop={visible ? 'always' : 'never'} />
+            <CanvasHost scene={scene as ComponentType<object>} sceneProps={sceneProps} canvas={canvas} frameloop={visible ? 'always' : 'demand'} />
           </Suspense>
         </SceneBoundary>
       )}

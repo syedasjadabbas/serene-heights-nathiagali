@@ -164,6 +164,7 @@ function Rig({ tower, floor, labelEls, spin }: Pick<Props, 'tower' | 'floor' | '
       if (!el) return
       el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) translate(-50%, -100%)`
       el.style.visibility = p.hidden ? 'hidden' : 'visible'
+      el.style.opacity = p.hidden ? '0' : '1'
     })
   })
   if (coarsePointer) return null

@@ -50,6 +50,10 @@ export function Statement() {
     <section className="band tone-light" id="resort">
       <div className="wrap statement" ref={ref}>
         <Split text="A resort you own, run like a hotel." em="run like a hotel" />
+        <figure className="statement-wide" data-reveal>
+          <div className="arch-wide"><img src="/media/arrival-snow.webp" srcSet={srcSet('/media/arrival-snow.webp')} sizes="(max-width: 820px) 100vw, 50vw" loading="lazy" alt="The arrival drive to Serene Heights after fresh snowfall, lamp posts lining the road" /></div>
+          <figcaption className="label">Arrival, after the first snow</figcaption>
+        </figure>
         <figure className="statement-pic" data-reveal>
           <div className="arch"><img src="/media/rooftop.webp" srcSet={srcSet('/media/rooftop.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Rooftop terraces of Serene Heights at sunset over the pines" /></div>
           <Swoosh />
@@ -75,7 +79,7 @@ export function Seasons() {
         <div className="seasons">
           <div className="season-frame arch-wide" data-reveal>
             <LazyCanvas scene={SeasonScene} sceneProps={{ season, a: narrowScreen ? smallSrc(seasons.winter.img) : seasons.winter.img, b: narrowScreen ? smallSrc(seasons.summer.img) : seasons.summer.img }}
-              warmup="1200px" canvas={{ dpr: [1, 1.5], gl: { antialias: false }, orthographic: true, camera: { position: [0, 0, 1] } }}
+              warmup="1200px" premount={1} canvas={{ dpr: [1, 1.5], gl: { antialias: false }, orthographic: true, camera: { position: [0, 0, 1] } }}
               fallback={<SceneFallback src={s.img} alt={s.title} />} />
             <span className="frame-cap label">{s.months}</span>
           </div>

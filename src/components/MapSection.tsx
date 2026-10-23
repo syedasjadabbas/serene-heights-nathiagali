@@ -102,7 +102,7 @@ function MapSection3D() {
   return (
     <section className="map-section" id="location" ref={section}>
       <div className="map-sticky">
-        <LazyCanvas scene={MapScene} sceneProps={{ lite, onStop, labelEls }} warmup="2000px"
+        <LazyCanvas scene={MapScene} sceneProps={{ lite, onStop, labelEls }} warmup="2000px" premount={4}
           canvas={{ dpr: [1, lite ? 1.25 : 1.75], camera: { fov: 38, near: 0.1, far: 400, position: [4, 78, 64] }, gl: { antialias: false, powerPreference: 'high-performance' } }} />
         <div className="map-shade" />
         <div className="map-labels" aria-hidden="true">

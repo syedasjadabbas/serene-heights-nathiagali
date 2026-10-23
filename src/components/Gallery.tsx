@@ -47,7 +47,7 @@ export function Gallery() {
   return (
     <section className="gallery" ref={section} style={{ height: `${gallery.length * 70 + 60}vh` }}>
       <div className="gallery-sticky">
-        <LazyCanvas scene={GalleryScene} sceneProps={{ images, onIndex }} warmup="1500px"
+        <LazyCanvas scene={GalleryScene} sceneProps={{ images, onIndex }} warmup="1500px" premount={3}
           canvas={{ dpr: [1, 1.5], camera: { fov: 50, near: 0.1, far: 120, position: [0, 0, 6] }, gl: { antialias: true } }}
           fallback={<img ref={fallbackImg} className="scene-fallback gallery-fallback" src={gallery[0].src} alt="" />} />
         <ul className="sr-only" aria-label="Gallery">

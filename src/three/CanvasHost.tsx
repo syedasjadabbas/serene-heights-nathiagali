@@ -6,7 +6,7 @@ import { Canvas, type CanvasProps } from '@react-three/fiber'
 export default function CanvasHost<P extends object>({ scene: Scene, sceneProps, frameloop, canvas }: {
   scene: ComponentType<P>
   sceneProps: P
-  frameloop: 'always' | 'never'
+  frameloop: 'always' | 'demand' | 'never'
   canvas: Omit<CanvasProps, 'children'>
 }) {
   return (
