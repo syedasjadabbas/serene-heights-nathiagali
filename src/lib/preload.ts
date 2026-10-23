@@ -1,38 +1,51 @@
 import { hasWebGL } from './device'
 import { heroState } from '../three/heroState'
 
-// Start fetching the 3D engine and the hero scene the moment the page opens, in parallel
-// with React booting, instead of waiting for the hero canvas to be noticed on screen.
-// The other scenes and the map's elevation grid follow when the browser is idle, so later
-// sections are ready before the visitor scrolls to them.
+// Start fetching the 3D engine and every scene the moment the page opens, in parallel with
+// React booting, instead of waiting for each canvas to be noticed on screen. The scene
+// chunks are small; the map's elevation grid and the section photos follow as soon as the
+// hero has drawn, so later sections are ready before the visitor scrolls to them.
 let started = false
 export function startPreload() {
-  if (started || typeof window === 'undefined' || !hasWebGL()) return
+  if (started || typeof window === 'undefined') return
   started = true
+  void whenHeroReady().then(() => {
+    window.setTimeout(warmImages, 300)
+  })
+  if (!hasWebGL()) return
   void import('../three/CanvasHost')
   void import('../three/HeroScene')
-  // Safari has no requestIdleCallback
-  const idle = (fn: () => void) =>
-    typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(fn, { timeout: 3000 }) : setTimeout(fn, 1500)
-  idle(() => {
-    void import('../three/SeasonScene')
-    void import('../three/SelectorScene')
-    void import('../three/GalleryScene')
-    void import('../three/MapScene')
-    void import('../three/geo').then((g) => g.loadDem())
-  })
+  void import('../three/SeasonScene')
+  void import('../three/SelectorScene')
+  void import('../three/GalleryScene')
+  void import('../three/MapScene')
+  void whenHeroReady().then(() => import('../three/geo').then((g) => g.loadDem()))
+}
+
+// Section photos are lazy-loaded so they never compete with the hero; once it is up, fetch
+// them all in page order so none of them pops in during the scroll.
+function warmImages() {
+  const imgs = Array.from(document.querySelectorAll<HTMLImageElement>('img[loading="lazy"]'))
+  let i = 0
+  const next = () => {
+    // a few at a time, so the network stays free for anything the visitor does
+    for (let n = 0; n < 4 && i < imgs.length; n++, i++) imgs[i].loading = 'eager'
+    if (i < imgs.length) window.setTimeout(next, 150)
+  }
+  next()
 }
 
 // ---- background pre-mount of the 3D sections ----
-// After the hero has appeared and its intro has played, each queued 3D section is mounted
-// one at a time in idle moments: it builds its geometry and compiles its shaders while the
-// visitor is still at the top, so it is already there when they scroll to it.
+// After the hero has appeared, each queued 3D section is mounted one at a time in idle
+// moments: it builds its geometry and compiles its shaders while the visitor is still at
+// the top, so it is already there when they scroll to it.
 type Job = { order: number; run: () => void; cancelled: boolean }
 const queue: Job[] = []
 let draining = false
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+// the hero animates continuously, so a true idle moment may never come: wait briefly at most
 const idleTick = () => new Promise<void>((r) =>
-  typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(() => r(), { timeout: 1200 }) : setTimeout(r, 200))
+  typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback(() => r(), { timeout: 250 }) : setTimeout(r, 100))
 
 export function queuePremount(order: number, run: () => void) {
   const job: Job = { order, run, cancelled: false }
@@ -46,13 +59,13 @@ async function drain() {
   if (draining) return
   draining = true
   await whenHeroReady()
-  await sleep(1500) // let the hero intro play smoothly first
+  await sleep(600) // let the hero's first frames settle
   while (queue.length) {
     const job = queue.shift()!
     if (job.cancelled) continue
     await idleTick()
     job.run()
-    await sleep(500) // one scene at a time, so the page never stalls
+    await sleep(250) // one scene at a time, so the page never stalls
   }
   draining = false
 }

@@ -42,8 +42,11 @@ export function LazyCanvas<P extends object>({ scene, sceneProps, canvas = {}, f
       setVisible(e.isIntersecting)
       if (e.isIntersecting) setMounted(true)
     }, { rootMargin: warmup })
+    // build well ahead of the screen, so a fast scroll never reaches an empty canvas
+    const ahead = new IntersectionObserver(([e]) => { if (e.isIntersecting) setMounted(true) }, { rootMargin: '150% 0px' })
     io.observe(el)
-    return () => io.disconnect()
+    ahead.observe(el)
+    return () => { io.disconnect(); ahead.disconnect() }
   }, [warmup, supported])
   useEffect(() => {
     if (!supported || eager || premount === undefined) return
