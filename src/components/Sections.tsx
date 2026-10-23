@@ -61,6 +61,13 @@ export function Statement() {
         <div className="copy">
           <p data-reveal>Serene Heights is a hotel and resort on the main Nathia Gali road, fifty metres from the PAF airbase. Every apartment is furnished, serviced and let to guests by DM Consortium as one hotel.</p>
           <p data-reveal>Owners pay no maintenance charges and no hidden costs. They receive a share of hotel revenue every quarter and 28 nights a year to stay free, in winter or summer.</p>
+          <ul className="highlights" data-reveal>
+            <li><strong>DM Consortium</strong><span>Runs every apartment as one hotel</span></li>
+            <li><strong>Zero</strong><span>Maintenance fees or hidden costs</span></li>
+            <li><strong>28 nights</strong><span>Free stays for owners, every year</span></li>
+            <li><strong>Quarterly</strong><span>Profit share from hotel revenue</span></li>
+          </ul>
+          <a className="btn" data-reveal href="#ownership" onClick={(e) => { e.preventDefault(); scrollTo('#ownership') }}>See the payment plan</a>
         </div>
       </div>
     </section>
