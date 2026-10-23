@@ -18,7 +18,7 @@ const COLORS = {
   selected: new THREE.Color('#37584f'),
   hover: new THREE.Color('#cfe3d8'),
   full: new THREE.Color('#9da59f'),
-  stucco: new THREE.Color('#ece4d5'),
+  stucco: new THREE.Color('#f1f3ee'),
 }
 
 import { coarsePointer } from '../lib/device'
@@ -50,7 +50,7 @@ function Floor({ t, f, props }: { t: number; f: number; props: Props }) {
     const short = side(spec.d), long = side(spec.w)
     const cap = new THREE.MeshStandardMaterial({ color: COLORS.stucco, roughness: 0.9, transparent: true })
     const railMat = new THREE.MeshStandardMaterial({ map: fitTexture(tx.rail, spec.w + 0.1, 0.2), transparent: true, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.4 })
-    const slabMat = new THREE.MeshStandardMaterial({ color: '#2a2623', roughness: 0.7, transparent: true })
+    const slabMat = new THREE.MeshStandardMaterial({ color: '#18332a', roughness: 0.7, transparent: true })
     return { box: [short, short, cap, cap, long, long], tinted: [short, long], all: [short, long, cap, railMat, slabMat], railMat, slabMat }
   }, [isLobby, isTop, f, t, spec.d, spec.w])
   useEffect(() => () => mats.all.forEach((m) => { m.map?.dispose(); m.dispose() }), [mats])
@@ -114,7 +114,7 @@ function Pavilion({ w, d, x, onClick }: { w: number; d: number; x: number; onCli
       return new THREE.MeshStandardMaterial({ map, emissiveMap: map, emissive: '#ffffff', emissiveIntensity: 0.35, roughness: 0.15, metalness: 0.3, transparent: true, opacity: 0.94 })
     }
     const short = side(d), long = side(w)
-    const cap = new THREE.MeshStandardMaterial({ color: '#2a2623', roughness: 0.6 })
+    const cap = new THREE.MeshStandardMaterial({ color: '#18332a', roughness: 0.6 })
     return [short, short, cap, cap, long, long]
   }, [w, d])
   useEffect(() => () => {
@@ -126,10 +126,10 @@ function Pavilion({ w, d, x, onClick }: { w: number; d: number; x: number; onCli
       <mesh position={[0, ph / 2, 0]} material={glass}>
         <boxGeometry args={[w, ph, d]} />
       </mesh>
-      {/* weathered steel gable roof */}
+      {/* pine-green steel gable roof */}
       <mesh geometry={gable} position={[0, ph, 0]}>
-        <meshStandardMaterial color="#5a3a2b" roughness={0.6} metalness={0.35} />
-        <Edges color="#1f1c1a" />
+        <meshStandardMaterial color="#37584f" roughness={0.55} metalness={0.3} />
+        <Edges color="#18332a" />
       </mesh>
     </group>
   )
@@ -158,7 +158,7 @@ function Tower({ t, props }: { t: number; props: Props }) {
       <group ref={roof}>
       <mesh position={[0, H + 0.02, 0]}>
         <boxGeometry args={[spec.w + 0.06, 0.04, spec.d + 0.06]} />
-        <meshStandardMaterial color="#2a2623" roughness={0.7} />
+        <meshStandardMaterial color="#18332a" roughness={0.7} />
       </mesh>
       <group position={[0, H + 0.04, 0]}>
         <Pavilion w={spec.w * 0.5} d={spec.d * 0.72} x={-spec.w * 0.2} onClick={pick} />

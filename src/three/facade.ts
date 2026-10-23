@@ -1,12 +1,12 @@
 import * as THREE from 'three'
 
-// Facade textures drawn once on canvases, after the renders: cream stucco, dark-framed arched
-// French windows (some lit warm from inside), black balcony railings and a stone base.
+// Facade textures drawn once on canvases: the renders' architecture (arched French windows,
+// balcony railings, a stone base) in the site's palette of snow, pine and sage.
 
 export const BAY = 0.42 // world width of one window bay
 const BAYS = 4 // bays per texture tile, so lit windows don't repeat in an obvious rhythm
-const STUCCO = '#ece4d5'
-const FRAME = '#2a2623'
+const STUCCO = '#f1f3ee' // snow
+const FRAME = '#18332a' // pine
 
 function canvas(w: number, h: number) {
   const c = document.createElement('canvas')
@@ -31,7 +31,7 @@ function plaster(g: CanvasRenderingContext2D, w: number, h: number, base: string
   let s = seed
   const r = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646
   for (let i = 0; i < w * h * 0.02; i++) {
-    g.fillStyle = r() > 0.5 ? 'rgba(255,255,255,0.06)' : 'rgba(80,60,40,0.05)'
+    g.fillStyle = r() > 0.5 ? 'rgba(255,255,255,0.06)' : 'rgba(24,51,42,0.05)'
     g.fillRect(r() * w, r() * h, 2, 2)
   }
 }
@@ -50,15 +50,15 @@ function archWindow(g: CanvasRenderingContext2D, x: number, y: number, w: number
   path()
   g.fillStyle = FRAME
   g.fill()
-  // glass: warm interior light, or dusk reflection
+  // glass: soft sage interior light, or a deep pine reflection
   const inset = w * 0.1
   const glass = g.createLinearGradient(0, y, 0, y + h)
   if (lit) {
-    glass.addColorStop(0, '#f6dcae')
-    glass.addColorStop(1, '#d9a46c')
+    glass.addColorStop(0, '#e2efe8')
+    glass.addColorStop(1, '#9fc2b1')
   } else {
-    glass.addColorStop(0, '#5d6d6c')
-    glass.addColorStop(1, '#2f3a39')
+    glass.addColorStop(0, '#3f5f55')
+    glass.addColorStop(1, '#1f3d34')
   }
   // inner pane, drawn as a slightly smaller arch
   const ix = x + inset, iy = y + inset, iw = w - inset * 2, ih = h - inset
@@ -101,7 +101,7 @@ function build() {
       archWindow(g, b * bw + (bw - ww) / 2, H * 0.12, ww, H * 0.86, r() < 0.45)
     }
     // floor line: slab edge in shadow
-    g.fillStyle = 'rgba(60,45,35,0.35)'
+    g.fillStyle = 'rgba(24,51,42,0.3)'
     g.fillRect(0, H - 5, W, 5)
     return toTexture(c)
   })
@@ -116,12 +116,12 @@ function build() {
     return toTexture(c)
   })()
 
-  // ground floor: warm stone with tall glazed doors
+  // ground floor: sage-grey stone with tall glazed doors
   const lobby = (() => {
     const W = 512, H = 160
     const [c, g] = canvas(W, H)
-    plaster(g, W, H, '#cbbfa9', 5)
-    g.strokeStyle = 'rgba(90,70,50,0.25)'
+    plaster(g, W, H, '#c9d6cf', 5)
+    g.strokeStyle = 'rgba(24,51,42,0.18)'
     g.lineWidth = 2
     for (let y = 20; y < H; y += 26) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke() }
     const bw = W / BAYS
@@ -130,8 +130,8 @@ function build() {
       g.fillStyle = FRAME
       g.fillRect(x, H * 0.12, w, H * 0.88)
       const glass = g.createLinearGradient(0, H * 0.12, 0, H)
-      glass.addColorStop(0, b % 2 ? '#4f5d5b' : '#e8cfa2')
-      glass.addColorStop(1, b % 2 ? '#2c3534' : '#b98b5c')
+      glass.addColorStop(0, b % 2 ? '#3f5f55' : '#e2efe8')
+      glass.addColorStop(1, b % 2 ? '#1f3d34' : '#94b8a6')
       g.fillStyle = glass
       g.fillRect(x + 5, H * 0.12 + 5, w - 10, H * 0.88 - 5)
       g.fillStyle = FRAME
@@ -140,28 +140,28 @@ function build() {
     return toTexture(c)
   })()
 
-  // balcony railing: black bars with a top rail, transparent between
+  // balcony railing: pine bars with a top rail, transparent between
   const rail = (() => {
     const W = 128, H = 64
     const [c, g] = canvas(W, H)
     g.clearRect(0, 0, W, H)
-    g.fillStyle = '#1e1b19'
+    g.fillStyle = FRAME
     g.fillRect(0, 0, W, 7)
     g.fillRect(0, H - 4, W, 4)
     for (let x = 4; x < W; x += 16) g.fillRect(x, 0, 4, H)
     return toTexture(c, true)
   })()
 
-  // rooftop pavilion glazing: dark steel grid over warm-lit glass
+  // rooftop pavilion glazing: pine steel grid over sage-lit glass
   const glass = (() => {
     const W = 256, H = 128
     const [c, g] = canvas(W, H)
     const lit = g.createLinearGradient(0, 0, 0, H)
-    lit.addColorStop(0, '#f7e2bd')
-    lit.addColorStop(1, '#cf9a62')
+    lit.addColorStop(0, '#f1f7f3')
+    lit.addColorStop(1, '#a9c7b8')
     g.fillStyle = lit
     g.fillRect(0, 0, W, H)
-    g.fillStyle = 'rgba(40,52,52,0.35)' // reflection band
+    g.fillStyle = 'rgba(24,51,42,0.3)' // reflection band
     g.fillRect(0, 0, W, H * 0.3)
     g.fillStyle = FRAME
     for (let x = 0; x <= W; x += W / 6) g.fillRect(x - 3, 0, 6, H)
