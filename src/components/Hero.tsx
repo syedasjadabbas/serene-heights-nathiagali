@@ -66,7 +66,7 @@ export function Hero({ started }: { started: boolean }) {
 
         <div className="wrap hero-stages">
           <div className="hero-stage" data-i="0">
-            <h1 className="hero-title">
+            <h1 className="hero-title" aria-label="Pakistan’s first winter resort">
               <span className="line l1"><span>Pakistan’s</span></span>
               <span className="line l2"><span>first</span></span>
               <span className="line l3"><span>Winter</span><span className="em">Resort</span></span>

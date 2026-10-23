@@ -207,7 +207,8 @@ export function Ownership() {
   const book = total * pricing.bookingShare
   const month = (total - book) / pricing.months
   const set = (v: number) => { const c = Math.max(50, Math.min(5000, Math.round(v) || 50)); setSq(c); setTyped(String(c)) }
-  const presets: [number, string][] = [[50, 'Smart unit'], [550, 'example 1-bed'], [850, 'example 2-bed'], [1250, 'example 3-bed']]
+  // Smart Property Units have their own published price (see the card beside), so no preset here
+  const presets: [number, string][] = [[550, 'example 1-bed'], [850, 'example 2-bed'], [1250, 'example 3-bed']]
   return (
     <section className="band deco" id="ownership">
       <div className="wrap" ref={ref}>
