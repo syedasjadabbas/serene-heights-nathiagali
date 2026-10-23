@@ -167,8 +167,8 @@ export function Towers() {
       uReveal: { value: 0 },
       uTime: { value: 0 },
       uLitAmount: { value: 0.3 },
-      uFrame: { value: new THREE.Color('#f6dccb') },
-      uWarm: { value: new THREE.Color('#ffb07c') },
+      uFrame: { value: new THREE.Color('#eef6f1') },
+      uWarm: { value: new THREE.Color('#ffd08a') },
       uFogColor: { value: new THREE.Color(FOG.color) },
       uFogNear: { value: FOG.near },
       uFogFar: { value: FOG.far },
@@ -201,7 +201,7 @@ export function Towers() {
           return (
             <mesh key={i} position={[t.x, 0, t.z]} rotation={[0, t.rot, 0]} userData={{ h }}>
               <boxGeometry args={[t.w * 0.985, h * 2, t.d * 0.985]} />
-              <meshBasicMaterial color="#04132a" polygonOffset polygonOffsetFactor={1} polygonOffsetUnits={1} />
+              <meshBasicMaterial color="#0e221b" polygonOffset polygonOffsetFactor={1} polygonOffsetUnits={1} />
             </mesh>
           )
         })}

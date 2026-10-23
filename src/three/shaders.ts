@@ -20,4 +20,4 @@ uniform float uFogFar;
 vec3 applyFog(vec3 col, float depth){ return mix(col, uFogColor, smoothstep(uFogNear, uFogFar, depth)); }
 `
 
-export const FOG = { color: '#071c3a', near: 18, far: 150 }
+export const FOG = { color: '#16302a', near: 18, far: 150 }

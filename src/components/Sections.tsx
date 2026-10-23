@@ -42,7 +42,7 @@ export function Figures() {
 export function Statement() {
   const ref = useReveal<HTMLDivElement>()
   return (
-    <section className="band tone-cream" id="resort">
+    <section className="band tone-light" id="resort">
       <div className="wrap statement" ref={ref}>
         <Split text="A resort you own, run like a hotel." em="run like a hotel" />
         <figure className="statement-pic" data-reveal>
@@ -157,7 +157,7 @@ export function Amenities() {
     document.getElementById('tab-' + n)?.focus()
   }
   return (
-    <section className="band tone-cream" id="amenities">
+    <section className="band tone-light" id="amenities">
       <div className="wrap" ref={ref}>
         <ChapterHead left="Amenities" right="50+ on site" />
         <div className="amen">
@@ -265,7 +265,7 @@ export function Location() {
     return () => ctx.revert()
   }, [])
   return (
-    <section className="band tone-cream" id="distances">
+    <section className="band tone-light" id="distances">
       <div className="wrap journey" ref={ref}>
         <ChapterHead left="Distances" right="Main Nathia Gali road" />
         <Split text="Every distance, from the front door." />
@@ -374,7 +374,7 @@ export function Footer() {
     <footer>
       <div className="wrap foot">
         <div>
-          <a className="mark" href="#top" onClick={go('#top')}><span>Serene Heights</span><span>HOTELS &amp; RESORTS</span></a>
+          <a className="mark logo" href="#top" onClick={go('#top')} aria-label="Serene Heights Hotels & Resorts, back to top"><img src="/media/logo.png" alt="Serene Heights Hotels & Resorts" width="745" height="517" /></a>
           <p className="fine" style={{ marginTop: 16, maxWidth: '36ch' }}>Main Nathia Gali road, near PAF Airbase, Nathia Gali, Khyber Pakhtunkhwa. Managed by DM Consortium.</p>
         </div>
         <div><span className="label">Explore</span><ul>

@@ -32,7 +32,7 @@ export function Preloader({ onDone }: { onDone: () => void }) {
         <span className="label">Nathia Gali · Galiyat</span>
         <div className="pre-num"><span ref={num}>0</span><small>%</small></div>
         <div className="pre-track"><div className="pre-line" /></div>
-        <span className="pre-mark">Serene Heights</span>
+        <img className="pre-logo" src="/media/logo.png" alt="" width="745" height="517" />
       </div>
     </div>
   )

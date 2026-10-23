@@ -84,7 +84,7 @@ export function ChapterHead({ left, right }: { left: string; right: string }) {
   )
 }
 
-// Glowing copper ribbon that loops around an image, after ERA's light trails.
+// Glowing ribbon that loops around an image, after ERA's light trails; colours follow the section tone.
 let swooshN = 0
 export function Swoosh({ className = '' }: { className?: string }) {
   const id = useMemo(() => `sw${++swooshN}`, [])
@@ -92,10 +92,10 @@ export function Swoosh({ className = '' }: { className?: string }) {
     <svg className={`swoosh ${className}`} viewBox="0 0 400 160" aria-hidden="true">
       <defs>
         <linearGradient id={`${id}g`} x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0" stopColor="#ffe3d2" stopOpacity="0" />
-          <stop offset="0.35" stopColor="#ffd9c2" />
-          <stop offset="0.7" stopColor="#d98a6a" />
-          <stop offset="1" stopColor="#c07863" stopOpacity="0" />
+          <stop offset="0" style={{ stopColor: 'var(--sw1)' }} stopOpacity="0" />
+          <stop offset="0.35" style={{ stopColor: 'var(--sw2)' }} />
+          <stop offset="0.7" style={{ stopColor: 'var(--sw3)' }} />
+          <stop offset="1" style={{ stopColor: 'var(--sw4)' }} stopOpacity="0" />
         </linearGradient>
         <filter id={`${id}f`} x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="4" /></filter>
       </defs>

@@ -5,9 +5,21 @@ import * as THREE from 'three'
 import { elevation, loadDem, project, EXAG, MAP_W, MAP_D, PLACES, SERENE, ROUTE_MAIN, ROUTE_ABBOTTABAD, type Place } from './geo'
 import { fogGLSL } from './shaders'
 
-export const mapState = { progress: 0, pointerX: 0, pointerY: 0 }
+// progress: where the scroll is (0–1). shown: what the scene plays, which follows the
+// scroll at a capped pace so the whole drive takes at least DRIVE_SECONDS.
+export const mapState = { progress: 0, shown: 0, pointerX: 0, pointerY: 0 }
+const DRIVE_SECONDS = 8
 
-const BG = '#051936'
+function Pacer() {
+  useFrame((_, dt) => {
+    const step = Math.min(dt, 0.1) / DRIVE_SECONDS
+    const d = mapState.progress - mapState.shown
+    mapState.shown += Math.max(-step, Math.min(step, d))
+  })
+  return null
+}
+
+const BG = '#18332a'
 const worldAt = (lat: number, lon: number, lift = 0) => {
   const [x, z] = project(lat, lon)
   return new THREE.Vector3(x, elevation(x, z) * EXAG + lift, z)
@@ -55,26 +67,26 @@ void main(){
   float lit = 0.25 + 1.1 * max(dot(n, moon), 0.0);
 
   // elevation ramp: valley pine → upland → snow above ~2,350 m
-  vec3 c = mix(vec3(0.006, 0.02, 0.055), vec3(0.016, 0.042, 0.1), smoothstep(0.45, 1.3, vH));
-  c = mix(c, vec3(0.05, 0.07, 0.14), smoothstep(1.3, 2.1, vH));
+  vec3 c = mix(vec3(0.008, 0.03, 0.022), vec3(0.02, 0.06, 0.045), smoothstep(0.45, 1.3, vH));
+  c = mix(c, vec3(0.06, 0.09, 0.08), smoothstep(1.3, 2.1, vH));
   float snow = smoothstep(2.42, 2.62, vH + (n.y - 0.85) * 0.5);
-  c = mix(c, vec3(0.13, 0.12, 0.17), snow);
+  c = mix(c, vec3(0.14, 0.17, 0.16), snow);
   c *= lit;
 
   // contours every 100 m, index contours every 500 m
   float minor = line(vH * 10.0 - 0.5, 1.0);
   float major = line(vH * 2.0 - 0.5, 1.4);
-  c += vec3(0.95, 0.66, 0.56) * (minor * 0.05 + major * 0.26);
+  c += vec3(0.75, 0.9, 0.83) * (minor * 0.05 + major * 0.26);
 
   // 5 km survey grid
   float grid = max(line(vWorld.x / 5.0 - 0.5, 0.8), line(vWorld.z / 5.0 - 0.5, 0.8));
-  c += vec3(0.97, 0.94, 0.9) * grid * 0.05;
+  c += vec3(0.95, 0.98, 0.96) * grid * 0.05;
 
   // scan ring travelling out from Serene Heights
   float d = distance(vWorld.xz, uHome);
   float ring = exp(-pow((d - uScan) * 1.6, 2.0)) * smoothstep(40.0, 0.0, uScan);
   float halo = exp(-d * 0.5);
-  c += vec3(1.0, 0.62, 0.3) * (ring * 0.12 + halo * 0.08);
+  c += vec3(0.85, 1.0, 0.92) * (ring * 0.12 + halo * 0.08);
 
   c = applyFog(c, vDepth);
   // fade the map tile into the night at its edges
@@ -220,7 +232,7 @@ uniform float uTime;
 varying vec2 vUv;
 void main(){
   float a = pow(1.0 - vUv.y, 2.2) * uOn * (0.75 + 0.25 * sin(uTime * 2.0));
-  gl_FragColor = vec4(vec3(1.0, 0.7, 0.38) * a * 2.2, a);
+  gl_FragColor = vec4(vec3(0.85, 1.0, 0.93) * a * 2.2, a);
 }`
 const ringFrag = /* glsl */ `
 uniform float uOn;
@@ -232,7 +244,7 @@ void main(){
   float ring = smoothstep(0.06, 0.0, abs(r - t)) * (1.0 - t);
   float core = smoothstep(0.16, 0.0, r);
   float a = (ring + core) * uOn;
-  gl_FragColor = vec4(vec3(1.0, 0.72, 0.4) * a * 2.0, a);
+  gl_FragColor = vec4(vec3(0.85, 1.0, 0.93) * a * 2.0, a);
 }`
 
 function Beacon({ on }: { on: React.RefObject<number> }) {
@@ -267,7 +279,7 @@ function LabelProjector({ els }: { els: React.RefObject<(HTMLDivElement | null)[
   const anchors = useMemo(() => LABELLED.map((pl) => worldAt(pl.lat, pl.lon, pl.kind === 'home' ? 2.6 : 1.2)), [])
   const v = useMemo(() => new THREE.Vector3(), [])
   useFrame(() => {
-    const p = mapState.progress
+    const p = mapState.shown
     const on = p > 0.1, arrived = p >= PHASE.arrive[0]
     LABELLED.forEach((pl, i) => {
       const el = els.current?.[i]
@@ -301,7 +313,7 @@ function CameraRig({ main, home }: { main: THREE.CatmullRomCurve3; home: THREE.V
 
   useFrame((_, dt) => {
     const k = 1 - Math.exp(-dt * 3)
-    s.p += (mapState.progress - s.p) * k
+    s.p += (mapState.shown - s.p) * k
     s.px += (mapState.pointerX - s.px) * k
     s.py += (mapState.pointerY - s.py) * k
     const p = s.p
@@ -367,7 +379,7 @@ export function MapScene({ lite, onStop, labelEls }: { lite: boolean; onStop: (i
   }, [main])
 
   useFrame((st) => {
-    const p = mapState.progress
+    const p = mapState.shown
     grow.current = ease(range(p, 0.01, PHASE.grow[1]))
     lights.current = range(p, 0.06, 0.16)
     drawMain.current = ease(range(p, PHASE.main[0], PHASE.main[1]))
@@ -387,13 +399,14 @@ export function MapScene({ lite, onStop, labelEls }: { lite: boolean; onStop: (i
   return (
     <>
       <color attach="background" args={[BG]} />
+      <Pacer />
       <CameraRig main={main} home={home} />
       <LabelProjector els={labelEls} />
       <group>
         <Terrain segs={lite ? 160 : 240} grow={grow} scan={scan} />
         <TownLights grow={grow} on={lights} />
-        <Route curve={main} draw={drawMain} color="#f0a27e" radius={0.11} />
-        <Route curve={abbottabad} draw={drawAbb} color="#fff1e6" dashed radius={0.08} />
+        <Route curve={main} draw={drawMain} color="#bcd8ca" radius={0.11} />
+        <Route curve={abbottabad} draw={drawAbb} color="#a9c7b8" dashed radius={0.08} />
         <Beacon on={beacon} />
       </group>
       <EffectComposer multisampling={0}>

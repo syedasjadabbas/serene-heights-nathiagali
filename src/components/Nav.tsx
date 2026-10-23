@@ -32,9 +32,8 @@ export function Nav() {
             ))}
           </ul>
         </nav>
-        <a className="mark" href="#top" onClick={go('#top')}>
-          <span>Serene Heights</span>
-          <span>Nathia Gali</span>
+        <a className="mark logo" href="#top" onClick={go('#top')} aria-label="Serene Heights Hotels & Resorts, back to top">
+          <img src="/media/logo.png" alt="Serene Heights Hotels & Resorts" width="745" height="517" />
         </a>
         <div className="nav-actions">
           <a className="btn small" href="#enquire" onClick={go('#enquire')}>Request a call</a>

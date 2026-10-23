@@ -16,6 +16,7 @@ export function startSmoothScroll() {
   if (lenis || reducedMotion) return lenis
   lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9 })
   lenis.on('scroll', ScrollTrigger.update)
+  lenis.scrollTo(0, { immediate: true, force: true })
   gsap.ticker.add((t) => lenis?.raf(t * 1000))
   gsap.ticker.lagSmoothing(0)
   return lenis
@@ -27,6 +28,12 @@ export function scrollTo(target: string | HTMLElement) {
     const el = typeof target === 'string' ? document.querySelector(target) : target
     el?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' })
   }
+}
+
+// Jump without animation, even while scrolling is locked.
+export function jumpTo(y: number) {
+  if (lenis) lenis.scrollTo(y, { immediate: true, force: true })
+  else window.scrollTo(0, y)
 }
 
 export function lockScroll(locked: boolean) {

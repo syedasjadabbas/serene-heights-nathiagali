@@ -9,13 +9,14 @@ import { availableOn, residentialFloors } from '../data/units'
 export type FloorRef = { tower: number; floor: number }
 
 const SLAB = FLOOR_H * 0.84
-// cream stone like the renders; sold-out floors read as copper
+// pale stone like the renders; sold-out floors read as dark green
 const COLORS = {
-  slab: new THREE.Color('#e6d7c6'),
-  slabDim: new THREE.Color('#2a3656'),
-  lobby: new THREE.Color('#9d8e80'),
-  selected: new THREE.Color('#cf8f7d'),
-  full: new THREE.Color('#a8604c'),
+  slab: new THREE.Color('#f2f2ec'),
+  slabDim: new THREE.Color('#2c443c'),
+  lobby: new THREE.Color('#9aa79f'),
+  selected: new THREE.Color('#37584f'),
+  hover: new THREE.Color('#a9c7b8'),
+  full: new THREE.Color('#4f6b62'),
 }
 
 export const coarsePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
@@ -42,9 +43,9 @@ function Floor({ t, f, props }: { t: number; f: number; props: Props }) {
     const dimTower = props.tower !== null && props.tower !== t
     const sel = props.tower === t && props.floor === f
     const hov = props.hover?.tower === t && props.hover.floor === f
-    const base = isLobby ? COLORS.lobby : dimTower ? COLORS.slabDim : full ? COLORS.full : COLORS.slab
+    const base = isLobby ? COLORS.lobby : sel ? COLORS.selected : hov ? COLORS.hover : dimTower ? COLORS.slabDim : full ? COLORS.full : COLORS.slab
     m.color.lerp(base, 0.2)
-    const glow = sel ? 0.9 : hov ? 0.45 : 0
+    const glow = sel ? 0.35 : hov ? 0.15 : 0
     m.emissive.lerp(COLORS.selected, 0.2)
     m.emissiveIntensity += (glow - m.emissiveIntensity) * 0.2
     m.opacity += ((dimTower ? 0.35 : 1) - m.opacity) * 0.15
@@ -73,12 +74,12 @@ function Tower({ t, props }: { t: number; props: Props }) {
       {/* rooftop restaurant and gable */}
       <mesh position={[0, H + ph / 2, 0]} onClick={(e) => { e.stopPropagation(); props.onTower(t) }}>
         <boxGeometry args={[pw, ph, pd]} />
-        <meshStandardMaterial color="#1b2b52" emissive="#f0a27e" emissiveIntensity={0.45} roughness={0.15} metalness={0.5} transparent opacity={0.85} />
-        <Edges color="#f0a27e" />
+        <meshStandardMaterial color="#24443b" emissive="#a9c7b8" emissiveIntensity={0.45} roughness={0.15} metalness={0.5} transparent opacity={0.85} />
+        <Edges color="#d6ebe1" />
       </mesh>
       <mesh position={[0, H + ph + 0.27, 0]} rotation={[0, 0, 0]}>
         <cylinderGeometry args={[0.001, pd / 2, 0.55, 4, 1]} />
-        <meshStandardMaterial color="#6a6158" roughness={0.6} />
+        <meshStandardMaterial color="#5d6b65" roughness={0.6} />
       </mesh>
     </group>
   )
@@ -87,7 +88,7 @@ function Tower({ t, props }: { t: number; props: Props }) {
 function Grounds() {
   const forest = useMemo(() => {
     const g = new THREE.ConeGeometry(0.22, 1, 6)
-    const m = new THREE.MeshStandardMaterial({ color: '#0a1c3a', roughness: 0.9 })
+    const m = new THREE.MeshStandardMaterial({ color: '#0f261e', roughness: 0.9 })
     const inst = new THREE.InstancedMesh(g, m, 260)
     const o = new THREE.Object3D()
     let s = 5
@@ -109,7 +110,7 @@ function Grounds() {
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[24, 64]} />
-        <meshStandardMaterial color="#0e2347" roughness={1} />
+        <meshStandardMaterial color="#1a3229" roughness={1} />
       </mesh>
       <primitive object={forest} />
     </group>
@@ -175,12 +176,12 @@ function Rig({ tower, floor, labelEls, spin }: Pick<Props, 'tower' | 'floor' | '
 export function SelectorScene(props: Props) {
   return (
     <>
-      <color attach="background" args={['#051936']} />
-      <fog attach="fog" args={['#051936', 22, 48]} />
-      <hemisphereLight args={['#f8e6da', '#0b1a35', 0.9]} />
+      <color attach="background" args={['#18332a']} />
+      <fog attach="fog" args={['#18332a', 22, 48]} />
+      <hemisphereLight args={['#eef6f1', '#0f221b', 0.9]} />
       <directionalLight position={[-8, 12, 6]} intensity={2.2} color="#f2f6f4" />
       <directionalLight position={[9, 5, -6]} intensity={0.6} color="#9fc6cf" />
-      <pointLight position={[3, 2, 7]} intensity={16} distance={16} color="#f0a27e" />
+      <pointLight position={[3, 2, 7]} intensity={12} distance={16} color="#ffe6c2" />
       <Rig tower={props.tower} floor={props.floor} labelEls={props.labelEls} spin={props.spin} />
       <group onPointerMissed={() => props.onHover(null)}>
         {TOWERS.map((_, t) => <Tower key={t} t={t} props={props} />)}

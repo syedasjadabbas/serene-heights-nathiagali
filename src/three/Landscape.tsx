@@ -47,11 +47,11 @@ void main(){
 }`
 
 const RIDGES = [
-  { z: -130, y: -2, w: 520, h: 70, seed: 3.1, freq: 6, amp: 0.55, base: 0.25, fill: '#1a2c55', edge: 0.55 },
-  { z: -95, y: -3, w: 400, h: 52, seed: 8.7, freq: 7, amp: 0.5, base: 0.2, fill: '#132449', edge: 0.7 },
-  { z: -68, y: -3, w: 300, h: 34, seed: 1.9, freq: 6, amp: 0.55, base: 0.18, fill: '#0d1d3d', edge: 0.85 },
-  { z: -45, y: -3, w: 220, h: 20, seed: 5.3, freq: 5, amp: 0.6, base: 0.2, fill: '#091733', edge: 1.0 },
-  { z: -26, y: -2.5, w: 150, h: 9, seed: 9.9, freq: 4, amp: 0.55, base: 0.25, fill: '#06122a', edge: 0.6 },
+  { z: -130, y: -2, w: 520, h: 70, seed: 3.1, freq: 6, amp: 0.55, base: 0.25, fill: '#24443b', edge: 0.55 },
+  { z: -95, y: -3, w: 400, h: 52, seed: 8.7, freq: 7, amp: 0.5, base: 0.2, fill: '#1c3a31', edge: 0.7 },
+  { z: -68, y: -3, w: 300, h: 34, seed: 1.9, freq: 6, amp: 0.55, base: 0.18, fill: '#163128', edge: 0.85 },
+  { z: -45, y: -3, w: 220, h: 20, seed: 5.3, freq: 5, amp: 0.6, base: 0.2, fill: '#112820', edge: 1.0 },
+  { z: -26, y: -2.5, w: 150, h: 9, seed: 9.9, freq: 4, amp: 0.55, base: 0.25, fill: '#0c1f19', edge: 0.6 },
 ]
 
 function Ridges() {
@@ -67,7 +67,7 @@ function Ridges() {
               uSeed: { value: r.seed }, uFreq: { value: r.freq }, uAmp: { value: r.amp }, uBase: { value: r.base },
               uIntro: { value: 0 }, uHeight: { value: r.h },
               uFill: { value: new THREE.Color(r.fill) },
-              uEdge: { value: new THREE.Color('#f0b29b') },
+              uEdge: { value: new THREE.Color('#d9ebe2') },
               uEdgeStrength: { value: r.edge },
             },
           }),
@@ -99,8 +99,8 @@ ${fogGLSL}
 void main(){
   float n = fbm2(vWorld.xz * 0.18);
   float contour = smoothstep(0.035, 0.0, abs(fract(n * 9.0) - 0.5) - 0.46);
-  vec3 col = mix(vec3(0.012, 0.03, 0.07), vec3(0.03, 0.06, 0.12), n);
-  col += vec3(0.95, 0.68, 0.58) * contour * 0.07;
+  vec3 col = mix(vec3(0.02, 0.045, 0.035), vec3(0.05, 0.085, 0.07), n);
+  col += vec3(0.8, 0.92, 0.86) * contour * 0.07;
   gl_FragColor = vec4(applyFog(col, vDepth), 1.0);
 }`
 const worldVert = /* glsl */ `
@@ -142,8 +142,8 @@ varying float vDepth;
 varying float vRand;
 ${fogGLSL}
 void main(){
-  vec3 col = mix(vec3(0.008, 0.02, 0.05), vec3(0.02, 0.045, 0.09), vRand);
-  col += vec3(0.95, 0.85, 0.8) * smoothstep(0.75, 1.0, vH) * 0.1; // snow on the tips
+  vec3 col = mix(vec3(0.01, 0.03, 0.022), vec3(0.025, 0.06, 0.045), vRand);
+  col += vec3(0.95, 0.97, 0.96) * smoothstep(0.75, 1.0, vH) * 0.1; // snow on the tips
   gl_FragColor = vec4(applyFog(col, vDepth), 1.0);
 }`
 
@@ -219,7 +219,7 @@ function LightTrails() {
       })
       return { geo, mat }
     }
-    return [mk(0, '#f0a27e', 1), mk(0.18, '#cf8f7d', 1.3), mk(-0.2, '#fff1e6', -0.8)]
+    return [mk(0, '#ffe6c2', 1), mk(0.18, '#a9c7b8', 1.3), mk(-0.2, '#f4fbf7', -0.8)]
   }, [])
   useFrame((s) => {
     items.forEach(({ mat }) => {
@@ -257,7 +257,7 @@ varying float vAlpha;
 void main(){
   float d = length(gl_PointCoord - 0.5);
   float a = smoothstep(0.5, 0.0, d) * vAlpha;
-  gl_FragColor = vec4(vec3(1.0, 0.96, 0.92) * a * 0.9, a);
+  gl_FragColor = vec4(vec3(0.96, 1.0, 0.98) * a * 0.9, a);
 }`
 
 function Snow({ count }: { count: number }) {
@@ -293,12 +293,12 @@ ${noiseGLSL}
 void main(){
   vec3 d = normalize(vDir);
   float h = d.y;
-  vec3 col = mix(vec3(0.16, 0.12, 0.2), vec3(0.012, 0.05, 0.13), smoothstep(-0.02, 0.45, h));
-  col = mix(col, vec3(0.005, 0.02, 0.06), smoothstep(0.45, 0.9, h));
-  col += vec3(0.85, 0.48, 0.38) * exp(-max(h, 0.0) * 9.0) * 0.35; // afterglow on the horizon
+  vec3 col = mix(vec3(0.08, 0.14, 0.12), vec3(0.02, 0.07, 0.055), smoothstep(-0.02, 0.45, h));
+  col = mix(col, vec3(0.006, 0.025, 0.02), smoothstep(0.45, 0.9, h));
+  col += vec3(0.55, 0.75, 0.66) * exp(-max(h, 0.0) * 9.0) * 0.22; // soft glow on the horizon
   vec3 moonDir = normalize(vec3(-0.35, 0.16, -1.0));
   float m = max(dot(d, moonDir), 0.0);
-  col += vec3(0.95, 0.75, 0.65) * pow(m, 60.0) * 0.4 + vec3(1.0, 0.96, 0.9) * smoothstep(0.9993, 0.9996, m);
+  col += vec3(0.8, 0.92, 0.88) * pow(m, 60.0) * 0.4 + vec3(0.97, 1.0, 0.98) * smoothstep(0.9993, 0.9996, m);
   float stars = step(0.9975, hash2(floor(d.xy * 420.0 + d.z * 211.0))) * smoothstep(0.05, 0.4, h);
   col += stars * 0.55;
   gl_FragColor = vec4(col, 1.0);

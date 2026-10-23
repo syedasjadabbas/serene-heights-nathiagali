@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { heroState } from './heroState'
 import { TOWER_SCALE, FLOOR_H } from './Towers'
 
-// Copper light ribbons orbiting the main tower, after ERA's glowing trails.
+// Light ribbons orbiting the main tower, after ERA's glowing trails.
 // Each ring is a thin tube on a tilted ellipse with a bright head and a fading tail.
 const vert = /* glsl */ `
 varying vec2 vUv;
@@ -20,14 +20,14 @@ void main(){
   float tail = pow(t, 3.0);              // long fading tail behind the head
   float head = smoothstep(0.97, 1.0, t);  // white-hot head
   float base = 0.06;                      // faint full ring
-  vec3 c = uColor * (tail * 2.2 + base) + vec3(1.0, 0.92, 0.85) * head * 3.0;
+  vec3 c = uColor * (tail * 2.2 + base) + vec3(1.0, 1.0, 1.0) * head * 3.0;
   gl_FragColor = vec4(c * uOn, 1.0);
 }`
 
 const RINGS = [
-  { rx: 5.2, rz: 3.6, y: 5.4, tiltX: 0.18, tiltZ: -0.22, speed: 0.07, color: '#f0a27e', r: 0.035 },
-  { rx: 6.4, rz: 4.4, y: 4.2, tiltX: -0.12, tiltZ: 0.16, speed: -0.05, color: '#cf8f7d', r: 0.028 },
-  { rx: 4.4, rz: 3.0, y: 7.2, tiltX: 0.26, tiltZ: 0.1, speed: 0.09, color: '#ffd2bc', r: 0.022 },
+  { rx: 5.2, rz: 3.6, y: 5.4, tiltX: 0.18, tiltZ: -0.22, speed: 0.07, color: '#ffffff', r: 0.035 },
+  { rx: 6.4, rz: 4.4, y: 4.2, tiltX: -0.12, tiltZ: 0.16, speed: -0.05, color: '#a9c7b8', r: 0.028 },
+  { rx: 4.4, rz: 3.0, y: 7.2, tiltX: 0.26, tiltZ: 0.1, speed: 0.09, color: '#d6ebe1', r: 0.022 },
 ]
 
 export function LightRings() {

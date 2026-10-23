@@ -56,7 +56,7 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 export function HeroScene({ lite }: { lite: boolean }) {
   return (
     <>
-      <color attach="background" args={['#051936']} />
+      <color attach="background" args={['#12261f']} />
       <CameraRig />
       <Landscape lite={lite} />
       <group scale={TOWER_SCALE}>

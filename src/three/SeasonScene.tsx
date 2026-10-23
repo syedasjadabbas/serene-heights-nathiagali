@@ -36,7 +36,7 @@ void main(){
   vec3 b = texture2D(uB, ub).rgb;
   vec3 col = mix(a, b, m);
   // a thin warm seam where the thaw line passes
-  col += vec3(1.0, 0.75, 0.45) * smoothstep(0.12, 0.0, abs(t - 0.5)) * 0.25 * step(0.01, uMix) * step(uMix, 0.99);
+  col += vec3(0.9, 1.0, 0.95) * smoothstep(0.12, 0.0, abs(t - 0.5)) * 0.25 * step(0.01, uMix) * step(uMix, 0.99);
   gl_FragColor = vec4(col, 1.0);
   #include <colorspace_fragment>
 }`

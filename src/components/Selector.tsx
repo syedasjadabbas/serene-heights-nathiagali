@@ -193,7 +193,7 @@ export function Selector() {
             {tower === null && (
               <div className="panel-empty">
                 <h3>Three towers, {UNITS.length} apartments.</h3>
-                <p>Choose a tower above or click any floor on the model. Floors in copper are fully sold.</p>
+                <p>Choose a tower above or click any floor on the model. Darker floors are fully sold.</p>
               </div>
             )}
 

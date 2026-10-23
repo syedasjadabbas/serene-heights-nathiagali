@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useRef } from 'react'
 import { LazyCanvas, ChapterHead } from './common'
 import { MapScene, mapState, LABELLED } from '../three/MapScene'
-import { gsap, ScrollTrigger } from '../lib/scroll'
+import { gsap, ScrollTrigger, jumpTo, lockScroll } from '../lib/scroll'
 
 const lite = typeof window !== 'undefined' && (window.innerWidth < 760 || navigator.hardwareConcurrency <= 4)
 
@@ -28,16 +28,49 @@ export function MapSection() {
   useEffect(() => {
     const el = section.current
     if (!el) return
+    // On the way down, scrolling waits at the end of the map until the drive has
+    // arrived, then holds on Serene Heights for HOLD_SECONDS before releasing.
+    const HOLD_AT = 0.975, HOLD_SECONDS = 1.5
+    const hold = { armed: true, active: false }
+    let watcher: (() => void) | null = null
+    let release: gsap.core.Tween | null = null
+    const endHold = () => {
+      if (watcher) gsap.ticker.remove(watcher)
+      watcher = null
+      release?.kill()
+      if (hold.active) lockScroll(false)
+      hold.active = false
+    }
+    const startHold = (self: ScrollTrigger) => {
+      hold.active = true
+      hold.armed = false
+      lockScroll(true)
+      jumpTo(self.start + (self.end - self.start) * HOLD_AT)
+      const t0 = performance.now()
+      watcher = () => {
+        // arrived (or a safety limit if the scene is not rendering)
+        if (mapState.shown >= HOLD_AT - 0.005 || performance.now() - t0 > 12000) {
+          gsap.ticker.remove(watcher!)
+          watcher = null
+          release = gsap.delayedCall(HOLD_SECONDS, endHold)
+        }
+      }
+      gsap.ticker.add(watcher)
+    }
     const st = ScrollTrigger.create({
       trigger: el, start: 'top top', end: 'bottom bottom',
-      onUpdate: (self) => { mapState.progress = self.progress },
+      onUpdate: (self) => {
+        mapState.progress = self.progress
+        if (self.progress < 0.6) hold.armed = true
+        if (hold.armed && !hold.active && self.direction > 0 && self.progress >= HOLD_AT) startHold(self)
+      },
     })
     const onMove = (e: PointerEvent) => {
       mapState.pointerX = (e.clientX / window.innerWidth) * 2 - 1
       mapState.pointerY = -((e.clientY / window.innerHeight) * 2 - 1)
     }
     window.addEventListener('pointermove', onMove)
-    return () => { st.kill(); window.removeEventListener('pointermove', onMove) }
+    return () => { endHold(); st.kill(); window.removeEventListener('pointermove', onMove) }
   }, [])
 
   const onStop = useCallback((i: number) => {

@@ -34,11 +34,11 @@ void main(){
   uv = (uv - 0.5) * (1.0 - uFocus * 0.04) + 0.5;
   vec3 c = texture2D(uTex, uv).rgb;
   float grey = dot(c, vec3(0.299, 0.587, 0.114));
-  vec3 cold = vec3(grey) * vec3(0.62, 0.7, 0.92);
+  vec3 cold = vec3(grey) * vec3(0.7, 0.85, 0.78);
   c = mix(cold * 0.55, c, uFocus);
   // frost frame
   float edge = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
-  c += vec3(0.95, 0.65, 0.55) * smoothstep(0.006, 0.0, edge) * 0.8;
+  c += vec3(0.85, 0.95, 0.9) * smoothstep(0.006, 0.0, edge) * 0.8;
   float a = uFade * smoothstep(60.0, 18.0, vDepth);
   gl_FragColor = vec4(c, a);
   #include <colorspace_fragment>
@@ -101,7 +101,7 @@ export function GalleryScene({ images, onIndex }: { images: string[]; onIndex: (
 
   return (
     <>
-      <color attach="background" args={['#051936']} />
+      <color attach="background" args={['#18332a']} />
       {planes.map((pl, i) => (
         <mesh key={i} geometry={pl.geo} material={pl.mat} position={[pl.pos.x * fit.x, pl.pos.y * fit.s, pl.pos.z]} scale={fit.s} rotation={[0, -pl.side * 0.22, 0]} />
       ))}
