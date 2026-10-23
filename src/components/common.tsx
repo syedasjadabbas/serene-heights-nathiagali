@@ -1,10 +1,13 @@
-import { Component, Fragment, Suspense, lazy, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode, type ElementType } from 'react'
+import { Component, Fragment, Suspense, createContext, lazy, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode, type ElementType } from 'react'
 import type { CanvasProps } from '@react-three/fiber'
 import { gsap, reducedMotion } from '../lib/scroll'
 import { hasWebGL } from '../lib/device'
 import { queuePremount } from '../lib/preload'
 
 const CanvasHost = lazy(() => import('../three/CanvasHost'))
+
+/** False while the home page is parked behind a sub-page: its 3D stays built but stops animating. */
+export const HomeActive = createContext(true)
 
 // Shows `fallback` if the 3D scene throws (lost context, driver bug, failed chunk).
 class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
@@ -31,6 +34,7 @@ export function LazyCanvas<P extends object>({ scene, sceneProps, canvas = {}, f
   const [visible, setVisible] = useState(eager)
   const [mounted, setMounted] = useState(eager)
   const supported = useMemo(() => hasWebGL(), [])
+  const active = useContext(HomeActive)
   useEffect(() => {
     const el = ref.current
     if (!el || !supported) return
@@ -50,7 +54,7 @@ export function LazyCanvas<P extends object>({ scene, sceneProps, canvas = {}, f
       {!supported ? fallback : mounted && (
         <SceneBoundary fallback={fallback}>
           <Suspense fallback={null}>
-            <CanvasHost scene={scene as ComponentType<object>} sceneProps={sceneProps} canvas={canvas} frameloop={visible ? 'always' : 'demand'} />
+            <CanvasHost scene={scene as ComponentType<object>} sceneProps={sceneProps} canvas={canvas} frameloop={visible && active ? 'always' : 'demand'} />
           </Suspense>
         </SceneBoundary>
       )}

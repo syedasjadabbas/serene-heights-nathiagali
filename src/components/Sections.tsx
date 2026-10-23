@@ -319,7 +319,8 @@ export function Founder() {
 }
 
 /* ---------- enquire ---------- */
-export function Enquire() {
+export function Enquire({ idPrefix = '' }: { idPrefix?: string } = {}) {
+  const fid = (k: string) => `${idPrefix}f-${k}`
   const [msg, setMsg] = useState('')
   const [interest, setInterest] = useState('Hotel apartment · 1 bedroom')
   const [unit, setUnit] = useState('')
@@ -332,9 +333,10 @@ export function Enquire() {
       setInterest(`Hotel apartment · ${beds} bedroom`)
       setMsg('')
     }
+    if (idPrefix) return // only the home page form takes units from the selector
     window.addEventListener('enquire-unit', on)
     return () => window.removeEventListener('enquire-unit', on)
-  }, [])
+  }, [idPrefix])
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
@@ -349,7 +351,7 @@ export function Enquire() {
     setUnit('')
   }
   return (
-    <section className="band enquire" id="enquire">
+    <section className="band enquire" id={idPrefix ? `${idPrefix}enquire` : 'enquire'}>
       <img src="/media/mist-valley.webp" srcSet={srcSet('/media/mist-valley.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="" aria-hidden="true" />
       <div className="wrap enq" ref={ref}>
         <div>
@@ -363,12 +365,12 @@ export function Enquire() {
           </div>
         </div>
         <form onSubmit={submit} noValidate data-reveal>
-          <div className="field"><label htmlFor="f-name">Name</label><input id="f-name" name="name" autoComplete="name" required /></div>
-          <div className="field"><label htmlFor="f-phone">Phone</label><input id="f-phone" name="phone" type="tel" autoComplete="tel" required /></div>
-          <div className="field"><label htmlFor="f-email">Email</label><input id="f-email" name="email" type="email" autoComplete="email" /></div>
-          <div className="field"><label htmlFor="f-city">City</label><input id="f-city" name="city" autoComplete="address-level2" /></div>
-          <div className="field full"><label htmlFor="f-int">Interested in</label>
-            <select id="f-int" name="interest" value={interest} onChange={(e) => setInterest(e.target.value)}>
+          <div className="field"><label htmlFor={fid('name')}>Name</label><input id={fid('name')} name="name" autoComplete="name" required /></div>
+          <div className="field"><label htmlFor={fid('phone')}>Phone</label><input id={fid('phone')} name="phone" type="tel" autoComplete="tel" required /></div>
+          <div className="field"><label htmlFor={fid('email')}>Email</label><input id={fid('email')} name="email" type="email" autoComplete="email" /></div>
+          <div className="field"><label htmlFor={fid('city')}>City</label><input id={fid('city')} name="city" autoComplete="address-level2" /></div>
+          <div className="field full"><label htmlFor={fid('int')}>Interested in</label>
+            <select id={fid('int')} name="interest" value={interest} onChange={(e) => setInterest(e.target.value)}>
               <option>Hotel apartment · 1 bedroom</option>
               <option>Hotel apartment · 2 bedroom</option>
               <option>Hotel apartment · 3 bedroom</option>
@@ -376,7 +378,7 @@ export function Enquire() {
               <option>Booking a stay</option>
             </select>
           </div>
-          <div className="field full"><label htmlFor="f-unit">Apartment (optional)</label><input id="f-unit" name="unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. A-503" /></div>
+          <div className="field full"><label htmlFor={fid('unit')}>Apartment (optional)</label><input id={fid('unit')} name="unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. A-503" /></div>
           <button className="btn" type="submit">Request a call back</button>
           <p className="fine form-note">We use your details only to answer this enquiry. See our <Link to="/privacy-policy">privacy policy</Link>.</p>
           {msg && <p className="form-msg" role="status">{msg}</p>}

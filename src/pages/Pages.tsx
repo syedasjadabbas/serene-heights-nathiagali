@@ -269,7 +269,7 @@ export function ContactPage() {
           </article>
         </div>
       </section>
-      <Enquire />
+      <Enquire idPrefix="contact-" />
     </>
   )
 }

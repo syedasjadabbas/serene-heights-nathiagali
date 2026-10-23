@@ -1,5 +1,5 @@
-import { lazy, useCallback, useEffect, useRef } from 'react'
-import { LazyCanvas, ChapterHead } from './common'
+import { lazy, useCallback, useContext, useEffect, useRef } from 'react'
+import { LazyCanvas, ChapterHead, HomeActive } from './common'
 import { mapState } from '../three/state'
 import { LABELLED } from '../three/geo'
 import { hasWebGL } from '../lib/device'
@@ -26,6 +26,9 @@ export function MapSection() {
 }
 
 function MapSection3D() {
+  const active = useContext(HomeActive)
+  const activeRef = useRef(active)
+  activeRef.current = active
   const section = useRef<HTMLElement>(null)
   const card = useRef<HTMLDivElement>(null)
   const kicker = useRef<HTMLSpanElement>(null)
@@ -71,6 +74,7 @@ function MapSection3D() {
       onUpdate: (self) => {
         mapState.progress = self.progress
         if (self.progress < 0.6) hold.armed = true
+        if (!activeRef.current) return // parked behind a sub-page
         if (!reducedMotion && hold.armed && !hold.active && self.direction > 0 && self.progress >= HOLD_AT) startHold(self)
       },
     })

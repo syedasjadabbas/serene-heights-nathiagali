@@ -6,6 +6,7 @@ import { Gallery } from './components/Gallery'
 import { MapSection } from './components/MapSection'
 import { Selector } from './components/Selector'
 import { WhatsAppButton, CookieNotice } from './components/Chrome'
+import { HomeActive } from './components/common'
 import { Amenities, Enquire, Figures, Footer, Founder, Location, Ownership, Residences, Seasons, Statement } from './components/Sections'
 import { AboutPage, BlogPage, ContactPage, FloorPlansPage, NotFoundPage, PrivacyPage, ProgressPage, SmartUnitPage } from './pages/Pages'
 import { ScrollTrigger, jumpTo, startSmoothScroll } from './lib/scroll'
@@ -36,32 +37,31 @@ function setMeta(title: string, description: string, path: string) {
 const firstPath = typeof window !== 'undefined' ? window.location.pathname : '/'
 let preloaded = !(firstPath === '/' || firstPath === '')
 
-function Home() {
+// Lands on a home-page section after a cross-page link, retrying while images and fonts settle.
+function landOnPendingSection() {
+  const hash = takePendingHash()
+  if (!hash) return () => {}
+  const timers: number[] = []
+  const land = (tries: number) => {
+    ScrollTrigger.refresh()
+    const el = document.getElementById(hash)
+    if (!el) return
+    jumpTo(el.getBoundingClientRect().top + window.scrollY)
+    if (tries > 0) timers.push(window.setTimeout(() => {
+      if (Math.abs(document.getElementById(hash)!.getBoundingClientRect().top) > 4) land(tries - 1)
+    }, 400))
+  }
+  timers.push(window.setTimeout(() => land(4), 150))
+  return () => timers.forEach(clearTimeout)
+}
+
+function Home({ active }: { active: boolean }) {
   const [started, setStarted] = useState(preloaded)
   const onDone = useCallback(() => { preloaded = true; setStarted(true) }, [])
-  useEffect(() => {
-    // arriving from another page: once layout settles, jump straight to the section
-    const hash = takePendingHash()
-    if (!hash) return
-    // retry a few times, since images and fonts can still move the section as the page loads
-    const timers: number[] = []
-    const land = (tries: number) => {
-      ScrollTrigger.refresh()
-      const el = document.getElementById(hash)
-      if (!el) return
-      const y = el.getBoundingClientRect().top + window.scrollY
-      jumpTo(y)
-      if (tries > 0) timers.push(window.setTimeout(() => {
-        if (Math.abs(document.getElementById(hash)!.getBoundingClientRect().top) > 4) land(tries - 1)
-      }, 400))
-    }
-    timers.push(window.setTimeout(() => land(4), 300))
-    return () => timers.forEach(clearTimeout)
-  }, [])
   return (
     <>
-      {!preloaded && <Preloader onDone={onDone} />}
-      <main id="main">
+      {!preloaded && active && <Preloader onDone={onDone} />}
+      <main id={active ? 'main' : undefined}>
         <Hero started={started} />
         <Figures />
         <Statement />
@@ -84,6 +84,22 @@ export default function App() {
   const path = usePath()
   const route = path === '/' ? null : ROUTES[path]
   const first = useRef(true)
+  const onHome = path === '/'
+  // The home page stays mounted once built, parked out of sight behind sub-pages, so its 3D
+  // sections are ready the moment a visitor comes back. Arriving on a sub-page first, it is
+  // built in the background shortly after.
+  const [homeMounted, setHomeMounted] = useState(onHome)
+  useEffect(() => {
+    if (homeMounted) return
+    const t = window.setTimeout(() => setHomeMounted(true), 1500)
+    return () => clearTimeout(t)
+  }, [homeMounted])
+  useEffect(() => {
+    if (!onHome) return
+    if (!homeMounted) setHomeMounted(true)
+    requestAnimationFrame(() => ScrollTrigger.refresh())
+    return landOnPendingSection()
+  }, [onHome, homeMounted])
 
   useEffect(() => {
     startSmoothScroll()
@@ -108,7 +124,14 @@ export default function App() {
     <>
       <a className="skip" href="#main">Skip to content</a>
       <Nav home={path === '/'} />
-      {path === '/' ? <Home key="home" /> : <main id="main" key={path}><Page /></main>}
+      {homeMounted && (
+        <HomeActive.Provider value={onHome}>
+          <div className={onHome ? 'home-layer' : 'home-layer parked'} aria-hidden={!onHome} inert={!onHome}>
+            <Home active={onHome} />
+          </div>
+        </HomeActive.Provider>
+      )}
+      {!onHome && <main id="main" key={path}><Page /></main>}
       <Footer />
       <WhatsAppButton />
       <CookieNotice />

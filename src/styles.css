@@ -761,3 +761,5 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
 }
 @media (max-width: 520px) { .steps { grid-template-columns: 1fr; } .page-head { padding-top: calc(112px + env(safe-area-inset-top, 0px)); } }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* home page parked behind a sub-page: kept built, out of sight and out of the scroll */
+.home-layer.parked { position: fixed; inset: 0; overflow: hidden; visibility: hidden; pointer-events: none; z-index: -1; }

@@ -55,11 +55,15 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 
 // Announces the first finished frame (shaders compiled, scene on screen) to the preloader.
 function FirstFrame() {
-  const frames = useMemo(() => ({ n: 0 }), [])
+  const sent = useMemo(() => ({ v: false }), [])
   useFrame(() => {
-    if (heroState.ready || ++frames.n < 2) return
-    heroState.ready = true
-    window.dispatchEvent(new Event('hero-ready'))
+    if (heroState.ready || sent.v) return
+    sent.v = true
+    // the frame is drawn right after this callback; announce once it has been
+    setTimeout(() => {
+      heroState.ready = true
+      window.dispatchEvent(new Event('hero-ready'))
+    }, 0)
   })
   return null
 }
