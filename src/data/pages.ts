@@ -1,13 +1,5 @@
-// Content for the inner pages, taken from the client's current site
-// (sereneheightsnathiagali.com/nathiagali): about, co-ownership, floor-plans,
+// Content for the inner pages, taken from the client's previous site: about, co-ownership, floor-plans,
 // progress, blog, privacy-policy and contact-us.
-
-// Images still served by the client's current site, through its Next.js image resizer.
-// Self-host these before the old site is retired.
-const LIVE = 'https://www.sereneheightsnathiagali.com/nathiagali'
-export const liveImage = (assetPath: string, width: number) =>
-  `${LIVE}/_next/image?url=${encodeURIComponent(assetPath)}&w=${width}&q=75`
-export const liveArticle = (slug: string) => `${LIVE}/blog/${slug}`
 
 export const about = {
   intro:
@@ -65,7 +57,10 @@ export const floorPlans = [
   { title: '6th floor', note: '', file: '6th.png' },
   { title: '7th floor', note: '', file: '7th.png' },
   { title: '8th floor', note: '', file: '8th.png' },
-].map((f) => ({ ...f, thumb: liveImage(`/assets/floorPlan/${f.file}`, 1080), full: liveImage(`/assets/floorPlan/${f.file}`, 1920) }))
+].map((f) => {
+  const name = f.file.replace(/\.png$/, '')
+  return { ...f, thumb: `/media/plans/${name}-1080.webp`, full: `/media/plans/${name}.webp` }
+})
 
 // Site-visit videos on the client's YouTube channel, newest first, in the order the
 // current progress page lists them.
@@ -119,8 +114,9 @@ const posts: Post[] = [
 const fallbackCovers = ['/media/ridge-960.webp', '/media/pines-960.webp', '/media/terraces-960.webp', '/media/rooftop-960.webp', '/media/sunrise-960.webp']
 export const blogPosts = posts.map((p, i) => ({
   ...p,
-  cover: p.image ? liveImage(`/assets/blogs/${p.slug}.${p.image}`, 640) : fallbackCovers[i % fallbackCovers.length],
-  url: liveArticle(p.slug),
+  cover: p.image ? `/media/blog/${p.slug}-640.webp` : fallbackCovers[i % fallbackCovers.length],
+  hero: p.image ? `/media/blog/${p.slug}.webp` : fallbackCovers[i % fallbackCovers.length].replace('-960', ''),
+  url: `/blog/${p.slug}`,
 }))
 
 export const offices = [

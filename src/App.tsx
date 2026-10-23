@@ -8,7 +8,8 @@ import { Selector } from './components/Selector'
 import { WhatsAppButton, CookieNotice } from './components/Chrome'
 import { HomeActive } from './components/common'
 import { Amenities, Enquire, Figures, Footer, Founder, Location, Ownership, Residences, Seasons, Statement } from './components/Sections'
-import { AboutPage, BlogPage, ContactPage, FloorPlansPage, NotFoundPage, PrivacyPage, ProgressPage, SmartUnitPage } from './pages/Pages'
+import { AboutPage, ArticlePage, BlogPage, ContactPage, FloorPlansPage, NotFoundPage, PrivacyPage, ProgressPage, SmartUnitPage } from './pages/Pages'
+import { blogPosts } from './data/pages'
 import { ScrollTrigger, jumpTo, startSmoothScroll } from './lib/scroll'
 import { takePendingHash, usePath } from './lib/router'
 import { initAnalytics, trackPage } from './lib/analytics'
@@ -23,6 +24,10 @@ export const ROUTES: Record<string, Route> = {
   '/blog': { page: BlogPage, title: `Journal | ${SITE}`, description: 'Travel guides to Nathia Gali and buyer guides on hotel-apartment ownership, payment plans and returns.' },
   '/contact': { page: ContactPage, title: `Contact | ${SITE}`, description: 'Call 042-111-111-744, WhatsApp +92 321 4979447, or send an enquiry to the Serene Heights sales team.' },
   '/privacy-policy': { page: PrivacyPage, title: `Privacy Policy | ${SITE}`, description: 'How Serene Heights collects, uses and protects your information.' },
+}
+// one route per blog article: /blog/<slug>
+for (const p of blogPosts) {
+  ROUTES[p.url] = { page: () => <ArticlePage slug={p.slug} />, title: `${p.title} | ${SITE}`, description: p.excerpt }
 }
 const HOME_TITLE = `${SITE} | Pakistan's First Winter Resort`
 const HOME_DESCRIPTION = 'Fully furnished hotel apartments at 7,906 ft in Nathia Gali. 150+ apartments, 3 towers, 50+ amenities. PKR 40,000 per sq ft, 30% booking, 36 monthly installments.'

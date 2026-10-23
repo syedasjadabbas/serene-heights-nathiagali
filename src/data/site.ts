@@ -1,5 +1,5 @@
-// All copy and figures come from the client's live site
-// (sereneheightsnathiagali.com/nathiagali): home, about, amenities,
+// All copy and figures come from the client's previous site
+// (the former /nathiagali pages): home, about, amenities,
 // payment-plan and co-ownership pages.
 
 export const contact = {

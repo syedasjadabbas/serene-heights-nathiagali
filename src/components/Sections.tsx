@@ -337,18 +337,34 @@ export function Enquire({ idPrefix = '' }: { idPrefix?: string } = {}) {
     window.addEventListener('enquire-unit', on)
     return () => window.removeEventListener('enquire-unit', on)
   }, [idPrefix])
-  const submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const [sending, setSending] = useState(false)
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const f = new FormData(e.currentTarget)
-    if (!String(f.get('name')).trim() || !String(f.get('phone')).trim()) {
+    const form = e.currentTarget
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>
+    if (!data.name?.trim() || !data.phone?.trim()) {
       setMsg('Add your name and phone number so the team can call you back.')
       return
     }
-    // TODO: connect to the client's CRM / email endpoint before launch
-    trackLead(String(f.get('interest') || ''))
-    setMsg('Thank you. The sales team will call you back shortly.')
-    e.currentTarget.reset()
-    setUnit('')
+    setSending(true)
+    setMsg('')
+    try {
+      // emailed to the sales team by the serverless function in api/enquire.ts
+      const res = await fetch('/api/enquire', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, page: window.location.pathname }),
+      })
+      if (!res.ok) throw new Error(String(res.status))
+      trackLead(data.interest || '')
+      setMsg('Thank you. The sales team will call you back shortly.')
+      form.reset()
+      setUnit('')
+    } catch {
+      setMsg(`Sorry, your enquiry couldn’t be sent. Please call ${contact.uan} or WhatsApp ${contact.whatsapp}.`)
+    } finally {
+      setSending(false)
+    }
   }
   return (
     <section className="band enquire" id={idPrefix ? `${idPrefix}enquire` : 'enquire'}>
@@ -379,7 +395,8 @@ export function Enquire({ idPrefix = '' }: { idPrefix?: string } = {}) {
             </select>
           </div>
           <div className="field full"><label htmlFor={fid('unit')}>Apartment (optional)</label><input id={fid('unit')} name="unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. A-503" /></div>
-          <button className="btn" type="submit">Request a call back</button>
+          <div className="hp" aria-hidden="true"><label htmlFor={fid('company')}>Company</label><input id={fid('company')} name="company" tabIndex={-1} autoComplete="off" /></div>
+          <button className="btn" type="submit" disabled={sending}>{sending ? 'Sending…' : 'Request a call back'}</button>
           <p className="fine form-note">We use your details only to answer this enquiry. See our <Link to="/privacy-policy">privacy policy</Link>.</p>
           {msg && <p className="form-msg" role="status">{msg}</p>}
         </form>

@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { ChapterHead, Split, Swoosh, srcSet, useReveal } from '../components/common'
 import { Enquire } from '../components/Sections'
-import { Link } from '../lib/router'
+import { Link, navigate } from '../lib/router'
+import { ScrollTrigger } from '../lib/scroll'
 import { trackContact } from '../lib/analytics'
 import { contact, figures, route } from '../data/site'
 import { about, blogPosts, floorPlans, mapsLink, offices, privacy, progress, smartUnitPage } from '../data/pages'
 
 /* ---------- shared page header ---------- */
-function PageHeader({ kicker, title, em, intro, image, children }: { kicker: string; title: string; em?: string; intro?: string; image?: string; children?: ReactNode }) {
+function PageHeader({ kicker, title, em, intro, image, className = '', children }: { kicker: string; title: string; em?: string; intro?: string; image?: string; className?: string; children?: ReactNode }) {
   const ref = useReveal<HTMLDivElement>()
   return (
-    <header className={`page-head deco${image ? ' with-image' : ''}`}>
+    <header className={`page-head deco${image ? ' with-image' : ''}${className ? ' ' + className : ''}`}>
       <div className="wrap page-head-grid" ref={ref}>
         <div className="page-head-text">
           <span className="label" data-reveal>{kicker}</span>
@@ -204,13 +205,25 @@ export function ProgressPage() {
 }
 
 /* ---------- Blog ---------- */
+type Post = (typeof blogPosts)[number]
+const blogGroup = (category: string) => (category.startsWith('Travel') ? 'Travel Guide' : category === 'Investment' ? 'Investment' : 'Buying Guides')
+
+function PostCard({ post: p, heading: H = 'h2' }: { post: Post; heading?: 'h2' | 'h3' }) {
+  return (
+    <Link className="post-card" to={p.url}>
+      <div className="post-pic"><img src={p.cover} alt="" loading="lazy" /></div>
+      <span className="label">{p.category} · {p.date}</span>
+      <H className="h-sm">{p.title}</H>
+      <p>{p.excerpt}</p>
+      <span className="post-more">Read article →</span>
+    </Link>
+  )
+}
+
 export function BlogPage() {
-  const cats = useMemo(() => ['All', ...Array.from(new Set(blogPosts.map((p) => (p.category.startsWith('Travel') ? 'Travel Guide' : p.category === 'Investment' ? 'Investment' : 'Buying Guides'))))], [])
+  const cats = useMemo(() => ['All', ...Array.from(new Set(blogPosts.map((p) => blogGroup(p.category))))], [])
   const [cat, setCat] = useState('All')
-  const shown = blogPosts.filter((p) => {
-    const c = p.category.startsWith('Travel') ? 'Travel Guide' : p.category === 'Investment' ? 'Investment' : 'Buying Guides'
-    return cat === 'All' || c === cat
-  })
+  const shown = blogPosts.filter((p) => cat === 'All' || blogGroup(p.category) === cat)
   return (
     <>
       <PageHeader kicker="Journal" title="Notes from the Galiyat." em="the Galiyat." intro="Travel guides to Nathia Gali, and straight answers for buyers on ownership, payment plans and returns." />
@@ -221,14 +234,120 @@ export function BlogPage() {
           </div>
           <div className="blog-grid">
             {shown.map((p) => (
-              <a key={p.slug} className="post-card" href={p.url} target="_blank" rel="noopener">
-                <div className="post-pic"><img src={p.cover} alt="" loading="lazy" /></div>
-                <span className="label">{p.category} · {p.date}</span>
-                <h2 className="h-sm">{p.title}</h2>
-                <p>{p.excerpt}</p>
-                <span className="post-more">Read article ↗</span>
-              </a>
+              <PostCard key={p.slug} post={p} />
             ))}
+          </div>
+        </div>
+      </section>
+    </>
+  )
+}
+
+/* ---------- Blog article ---------- */
+type Block =
+  | { t: 'lead' | 'p' | 'note' | 'h2' | 'h3'; html: string }
+  | { t: 'ul' | 'ol'; items: string[] }
+  | { t: 'table'; head: string[]; rows: string[][] }
+  | { t: 'faq'; q: string; a: string[] }
+  | { t: 'cta'; title: string; text: string; links: { href: string; label: string }[] }
+type Article = { title: string; readTime: string; blocks: Block[] }
+
+// Article text is the client's own content, converted ahead of time to a few safe tags (a, strong, em, br).
+const html = (h: string) => ({ __html: h })
+const sentenceCase = (t: string) => (t === t.toUpperCase() ? t.charAt(0) + t.slice(1).toLowerCase() : t)
+
+function ArticleBlock({ b }: { b: Block }) {
+  switch (b.t) {
+    case 'lead': return <p className="article-lead" dangerouslySetInnerHTML={html(b.html)} />
+    case 'p': return <p dangerouslySetInnerHTML={html(b.html)} />
+    case 'note': return <p className="article-note" dangerouslySetInnerHTML={html(b.html)} />
+    case 'h2': return <h2 dangerouslySetInnerHTML={html(b.html)} />
+    case 'h3': return <h3 dangerouslySetInnerHTML={html(b.html)} />
+    case 'ul': return <ul>{b.items.map((t, i) => <li key={i} dangerouslySetInnerHTML={html(t)} />)}</ul>
+    case 'ol': return <ol>{b.items.map((t, i) => <li key={i} dangerouslySetInnerHTML={html(t)} />)}</ol>
+    case 'table': return (
+      <div className="article-table">
+        <table>
+          {b.head.length > 0 && <thead><tr>{b.head.map((t, i) => <th key={i} scope="col" dangerouslySetInnerHTML={html(t)} />)}</tr></thead>}
+          <tbody>{b.rows.map((r, i) => <tr key={i}>{r.map((t, j) => <td key={j} dangerouslySetInnerHTML={html(t)} />)}</tr>)}</tbody>
+        </table>
+      </div>
+    )
+    case 'faq': return (
+      <details className="article-faq">
+        <summary dangerouslySetInnerHTML={html(b.q)} />
+        {b.a.map((t, i) => <p key={i} dangerouslySetInnerHTML={html(t)} />)}
+      </details>
+    )
+    case 'cta': return (
+      <aside className="article-cta">
+        {b.title && <h3>{sentenceCase(b.title)}</h3>}
+        {b.text && <p dangerouslySetInnerHTML={html(b.text)} />}
+        <div className="hero-cta">{b.links.map((l, i) => <Link key={l.href + i} className={i ? 'btn ghost' : 'btn'} to={l.href}>{l.label}</Link>)}</div>
+      </aside>
+    )
+  }
+}
+
+export function ArticlePage({ slug }: { slug: string }) {
+  const post = blogPosts.find((p) => p.slug === slug)!
+  const [article, setArticle] = useState<Article | null>(null)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    let live = true
+    setArticle(null)
+    setFailed(false)
+    fetch(`/data/blog/${slug}.json`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((a: Article) => { if (live) setArticle(a) })
+      .catch(() => { if (live) setFailed(true) })
+    return () => { live = false }
+  }, [slug])
+  // the page grows once the text arrives
+  useEffect(() => { if (article) requestAnimationFrame(() => ScrollTrigger.refresh()) }, [article])
+
+  // links inside the article text stay inside the site
+  const onClick = (e: MouseEvent<HTMLDivElement>) => {
+    const a = (e.target as HTMLElement).closest('a')
+    const href = a?.getAttribute('href')
+    if (!a || !href?.startsWith('/') || a.target || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+    e.preventDefault()
+    navigate(href)
+  }
+
+  const related = useMemo(() => {
+    const others = blogPosts.filter((p) => p.slug !== slug)
+    const same = others.filter((p) => blogGroup(p.category) === blogGroup(post.category))
+    return [...same, ...others.filter((p) => !same.includes(p))].slice(0, 3)
+  }, [slug, post.category])
+
+  const readTime = article?.readTime.replace(/\s*read$/, '')
+  return (
+    <>
+      <PageHeader className="article-head" kicker={post.category} title={post.title}
+        intro={[post.date, readTime && `${readTime} read`].filter(Boolean).join(' · ')}>
+        <Link className="back-link" to="/blog">← All articles</Link>
+      </PageHeader>
+      <section className="band tone-light article-band">
+        <div className="wrap article-wrap">
+          <figure className="article-cover">
+            <img src={post.hero} srcSet={post.hero.includes('/blog/') ? `${post.cover} 640w, ${post.hero} 1600w` : undefined}
+              sizes="(max-width: 900px) 100vw, 900px" alt="" />
+          </figure>
+          <div className="article-body" onClick={onClick}>
+            {article ? article.blocks.map((b, i) => <ArticleBlock key={i} b={b} />)
+              : failed ? <p>This article couldn’t be loaded. Please check your connection and try again.</p>
+              : <p className="article-loading" aria-live="polite">Loading article…</p>}
+          </div>
+        </div>
+      </section>
+      <section className="band deco">
+        <div className="wrap">
+          <ChapterHead left="Keep reading" right="Journal" />
+          <div className="blog-grid">{related.map((p) => <PostCard key={p.slug} post={p} heading="h3" />)}</div>
+          <div className="hero-cta page-cta-row">
+            <Link className="btn" to="/contact">Talk to the sales team</Link>
+            <Link className="btn ghost" to="/blog">All articles</Link>
           </div>
         </div>
       </section>

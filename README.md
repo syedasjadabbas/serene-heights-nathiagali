@@ -35,16 +35,29 @@ python scripts/build_dem.py <that-folder> public/data/galiyat-dem.bin
 
 ## Hosting notes
 
-- **Single-page routing:** every path must serve `index.html`. `public/_redirects` covers Netlify;
-  on Vercel/Apache/Nginx add the equivalent rewrite.
+- **Vercel:** `vercel.json` sends every path to `index.html` (static files are served first),
+  caches `/assets` for a year (hashed names) and `/media`, `/data` for 30 days, and adds basic
+  security headers. Build `npm run build`, output `dist`, Node 20.19+. Set analytics IDs as
+  Vercel environment variables, then redeploy (they are read at build time).
 - **Domain:** canonical links, share tags (`index.html`), `public/robots.txt` and `public/sitemap.xml`
   assume `https://www.sereneheightsnathiagali.com`. Change them if the site goes elsewhere.
 - **Analytics:** copy `.env.example` to `.env` and set `VITE_GA4_ID` and/or `VITE_META_PIXEL_ID`.
   With neither set, nothing loads and no cookie notice appears. Tracked: page views, `generate_lead`/`Lead`
   on enquiry, `contact`/`Contact` on WhatsApp, phone and email taps.
-- **Images still on the old site:** floor plans and blog covers load from the client's current site
-  (`liveImage()` in `src/data/pages.ts`), and blog cards link to the full articles there. Self-host
-  them before the old site is retired.
+- **Old addresses:** `vercel.json` permanently redirects the previous site's `/nathiagali/...` pages
+  (blog articles included) to their new addresses, so old links and search results keep working.
+- **Self-contained:** floor plans (`public/media/plans`), blog covers (`public/media/blog`) and the
+  30 journal articles (`public/data/blog/<slug>.json`, shown at `/blog/<slug>`) are all hosted here.
+  To add an article, add its entry to `posts` in `src/data/pages.ts`, a JSON file in the same shape
+  as the others, and a cover image, then list it in `public/sitemap.xml`.
+- **Enquiry emails:** the form posts to `api/enquire.ts`, a Vercel function that emails the
+  enquiry through [Resend](https://resend.com). In Vercel → Settings → Environment Variables set
+  `RESEND_API_KEY`, `ENQUIRY_FROM` (an address on a domain verified in Resend, e.g.
+  `Serene Heights Website <website@sereneheightsnathiagali.com>`) and optionally `ENQUIRY_TO`
+  (default `info@sereneheightsnathiagali.com`). Until the domain is verified, Resend's test sender
+  `onboarding@resend.dev` only delivers to the Resend account's own email. If sending fails, the
+  form shows the phone and WhatsApp numbers instead. `npm run dev` has no `/api`; use `vercel dev`
+  to try the form locally.
 - **No WebGL:** each 3D section falls back to a render photo (the map section is skipped; the
   distances list follows it).
 
@@ -60,4 +73,3 @@ python scripts/build_dem.py <that-folder> public/data/galiyat-dem.bin
    - When the architect's 3D model arrives (GLB/FBX), it can replace the massing in `SelectorScene`.
    - Floor plans are schematic (two rows of units either side of a corridor) until real plans are supplied.
 
-Before launch: connect the enquiry form (`Enquire` in `src/components/Sections.tsx`) to the sales team's email or CRM, and swap the text wordmark for the logo file.
