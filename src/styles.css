@@ -1,3 +1,7 @@
+/* self-hosted variable fonts (latin subset), preloaded in index.html */
+@font-face { font-family: 'Jost'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/jost-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/fonts/manrope-latin.woff2') format('woff2'); }
+
 /* Serene Heights — ERA's Art Deco layout in the resort's own colours.
    Deep pine and off-white sections, sage-to-white accents on dark, brand green on light,
    thin all-caps geometric display, arch frames, pill controls, deco arc patterns. */

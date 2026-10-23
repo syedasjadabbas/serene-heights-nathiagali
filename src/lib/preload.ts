@@ -1,5 +1,6 @@
 import { hasWebGL } from './device'
 import { heroState } from '../three/heroState'
+import { gallery, seasons } from '../data/site'
 
 // Start fetching the 3D engine and every scene the moment the page opens, in parallel with
 // React booting, instead of waiting for each canvas to be noticed on screen. The scene
@@ -23,14 +24,20 @@ export function startPreload() {
 }
 
 // Section photos are lazy-loaded so they never compete with the hero; once it is up, fetch
-// them all in page order so none of them pops in during the scroll.
+// them all in page order, then the photos the season and gallery scenes use as textures,
+// so nothing pops in during the scroll.
 function warmImages() {
   const imgs = Array.from(document.querySelectorAll<HTMLImageElement>('img[loading="lazy"]'))
+  // the same sizes the 3D scenes ask for (Seasons.tsx, Gallery.tsx), so they come from cache
+  const small = window.innerWidth < 760
+  const sized = (src: string) => (small ? src.replace(/\.webp$/, '-960.webp') : src)
+  const textures = hasWebGL() ? [seasons.winter.img, seasons.summer.img, ...gallery.map((g) => g.src)].map(sized) : []
   let i = 0
   const next = () => {
     // a few at a time, so the network stays free for anything the visitor does
     for (let n = 0; n < 4 && i < imgs.length; n++, i++) imgs[i].loading = 'eager'
     if (i < imgs.length) window.setTimeout(next, 150)
+    else textures.forEach((src) => { new Image().src = src })
   }
   next()
 }
@@ -59,13 +66,13 @@ async function drain() {
   if (draining) return
   draining = true
   await whenHeroReady()
-  await sleep(600) // let the hero's first frames settle
+  await sleep(300) // let the hero's first frames settle
   while (queue.length) {
     const job = queue.shift()!
     if (job.cancelled) continue
     await idleTick()
     job.run()
-    await sleep(250) // one scene at a time, so the page never stalls
+    await sleep(150) // one scene at a time, so the page never stalls
   }
   draining = false
 }

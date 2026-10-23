@@ -22,16 +22,16 @@ export function Preloader({ onDone }: { onDone: () => void }) {
     const creep = gsap.to(counter, { v: 90, duration: reducedMotion ? 0.1 : 3, ease: 'power2.out', onUpdate: show })
     let finish: gsap.core.Timeline | null = null
     const fonts = Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))])
-    const minShow = new Promise((r) => setTimeout(r, reducedMotion ? 0 : 350))
+    const minShow = new Promise((r) => setTimeout(r, reducedMotion ? 0 : 200))
     let cancelled = false
     Promise.all([whenHeroReady(), fonts, minShow]).then(() => {
       if (cancelled) return
       creep.kill()
       finish = gsap.timeline()
-        .to(counter, { v: 100, duration: 0.2, ease: 'power1.out', onUpdate: show })
-        .to('.pre-inner', { y: -20, opacity: 0, duration: 0.3, ease: 'power2.in' })
-        .to(root.current, { clipPath: 'inset(0 0 100% 0)', duration: 0.6, ease: 'expo.inOut' }, '-=0.15')
-        .add(() => { lockScroll(false); onDone() }, '-=0.55')
+        .to(counter, { v: 100, duration: 0.15, ease: 'power1.out', onUpdate: show })
+        .to('.pre-inner', { y: -20, opacity: 0, duration: 0.25, ease: 'power2.in' })
+        .to(root.current, { clipPath: 'inset(0 0 100% 0)', duration: 0.5, ease: 'expo.inOut' }, '-=0.15')
+        .add(() => { lockScroll(false); onDone() }, '-=0.45')
         .add(() => setGone(true))
     })
     return () => { cancelled = true; creep.kill(); finish?.kill() }
