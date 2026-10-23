@@ -4,19 +4,21 @@ import { OrbitControls, Edges } from '@react-three/drei'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { TOWERS, FLOOR_H } from './Towers'
+import { facadeTextures, fitTexture } from './facade'
 import { availableOn, residentialFloors } from '../data/units'
 
 export type FloorRef = { tower: number; floor: number }
 
 const SLAB = FLOOR_H * 0.84
-// pale stone like the renders; sold-out floors read as dark green
+// the facade texture shows at full colour; selection tints it, sold-out floors grey it,
+// floors of the other towers fade to pine
 const COLORS = {
-  slab: new THREE.Color('#f2f2ec'),
-  slabDim: new THREE.Color('#2c443c'),
-  lobby: new THREE.Color('#9aa79f'),
+  slab: new THREE.Color('#ffffff'),
+  slabDim: new THREE.Color('#3b5249'),
   selected: new THREE.Color('#37584f'),
-  hover: new THREE.Color('#a9c7b8'),
-  full: new THREE.Color('#4f6b62'),
+  hover: new THREE.Color('#cfe3d8'),
+  full: new THREE.Color('#9da59f'),
+  stucco: new THREE.Color('#ece4d5'),
 }
 
 import { coarsePointer } from '../lib/device'
@@ -34,53 +36,135 @@ type Props = {
 
 function Floor({ t, f, props }: { t: number; f: number; props: Props }) {
   const spec = TOWERS[t]
-  const mat = useRef<THREE.MeshStandardMaterial>(null)
   const isLobby = f === 0
+  const isTop = f === residentialFloors(t)
   const full = !isLobby && availableOn(t, f) === 0
+  const h = isLobby ? FLOOR_H * 0.96 : SLAB
+  const balcony = !isLobby && !isTop
+
+  // box faces: +x, -x, +y, -y, +z, -z; the long faces (w) and short faces (d) get their own tiling
+  const mats = useMemo(() => {
+    const tx = facadeTextures()
+    const base = isLobby ? tx.lobby : isTop ? tx.top : tx.floors[(f * 7 + t * 3) % tx.floors.length]
+    const side = (width: number) => new THREE.MeshStandardMaterial({ map: fitTexture(base, width), roughness: 0.82, emissive: COLORS.selected, emissiveIntensity: 0, transparent: true })
+    const short = side(spec.d), long = side(spec.w)
+    const cap = new THREE.MeshStandardMaterial({ color: COLORS.stucco, roughness: 0.9, transparent: true })
+    const railMat = new THREE.MeshStandardMaterial({ map: fitTexture(tx.rail, spec.w + 0.1, 0.2), transparent: true, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.4 })
+    const slabMat = new THREE.MeshStandardMaterial({ color: '#2a2623', roughness: 0.7, transparent: true })
+    return { box: [short, short, cap, cap, long, long], tinted: [short, long], all: [short, long, cap, railMat, slabMat], railMat, slabMat }
+  }, [isLobby, isTop, f, t, spec.d, spec.w])
+  useEffect(() => () => mats.all.forEach((m) => { m.map?.dispose(); m.dispose() }), [mats])
+
   useFrame(() => {
-    const m = mat.current
-    if (!m) return
     const dimTower = props.tower !== null && props.tower !== t
     const sel = props.tower === t && props.floor === f
     const hov = props.hover?.tower === t && props.hover.floor === f
-    const base = isLobby ? COLORS.lobby : sel ? COLORS.selected : hov ? COLORS.hover : dimTower ? COLORS.slabDim : full ? COLORS.full : COLORS.slab
-    m.color.lerp(base, 0.2)
-    const glow = sel ? 0.35 : hov ? 0.15 : 0
-    m.emissive.lerp(COLORS.selected, 0.2)
-    m.emissiveIntensity += (glow - m.emissiveIntensity) * 0.2
-    m.opacity += ((dimTower ? 0.35 : 1) - m.opacity) * 0.15
+    const base = sel ? COLORS.selected : hov ? COLORS.hover : dimTower ? COLORS.slabDim : full ? COLORS.full : COLORS.slab
+    const glow = sel ? 0.35 : hov ? 0.12 : 0
+    const opacity = dimTower ? 0.35 : 1
+    for (const m of mats.tinted) {
+      m.color.lerp(base, 0.2)
+      m.emissiveIntensity += (glow - m.emissiveIntensity) * 0.2
+    }
+    for (const m of mats.all) m.opacity += (opacity - m.opacity) * 0.15
   })
   const pick = (e: ThreeEvent<PointerEvent | MouseEvent>) => { e.stopPropagation(); if (!isLobby) props.onPick({ tower: t, floor: f }) }
+  const y0 = f * FLOOR_H
   return (
-    <mesh
-      position={[0, f * FLOOR_H + FLOOR_H / 2, 0]}
+    <group
       onPointerOver={(e) => { e.stopPropagation(); if (!isLobby) { props.onHover({ tower: t, floor: f }); document.body.style.cursor = 'pointer' } }}
       onPointerOut={() => { props.onHover(null); document.body.style.cursor = '' }}
       onClick={pick}
     >
-      <boxGeometry args={[spec.w, isLobby ? FLOOR_H * 0.96 : SLAB, spec.d]} />
-      <meshStandardMaterial ref={mat} color={COLORS.slab} emissive={COLORS.selected} emissiveIntensity={0} roughness={0.85} metalness={0} transparent opacity={1} />
-    </mesh>
+      <mesh position={[0, y0 + (isLobby ? h / 2 : FLOOR_H / 2), 0]} material={mats.box}>
+        <boxGeometry args={[spec.w, h, spec.d]} />
+      </mesh>
+      {balcony && (
+        <>
+          {/* balcony slabs front and back, with black railings like the renders */}
+          <mesh position={[0, y0 + 0.012, 0]} material={mats.slabMat}>
+            <boxGeometry args={[spec.w + 0.1, 0.024, spec.d + 0.28]} />
+          </mesh>
+          {[1, -1].map((side) => (
+            <mesh key={side} position={[0, y0 + 0.024 + 0.055, side * (spec.d / 2 + 0.14)]} material={mats.railMat}>
+              <planeGeometry args={[spec.w + 0.1, 0.11]} />
+            </mesh>
+          ))}
+        </>
+      )}
+    </group>
+  )
+}
+
+// a gabled steel-and-glass pavilion, like the rooftop restaurant and greenhouse in the renders
+function Pavilion({ w, d, x, onClick }: { w: number; d: number; x: number; onClick: (e: ThreeEvent<MouseEvent>) => void }) {
+  const ph = FLOOR_H * 1.05
+  const gable = useMemo(() => {
+    const gh = d * 0.22
+    const shape = new THREE.Shape([new THREE.Vector2(-d / 2 - 0.06, 0), new THREE.Vector2(d / 2 + 0.06, 0), new THREE.Vector2(0, gh)])
+    const g = new THREE.ExtrudeGeometry(shape, { depth: w + 0.1, bevelEnabled: false })
+    g.translate(0, 0, -(w + 0.1) / 2)
+    g.rotateY(Math.PI / 2)
+    return g
+  }, [w, d])
+  const glass = useMemo(() => {
+    const tx = facadeTextures().glass
+    const side = (width: number) => {
+      const map = fitTexture(tx, width, 0.6)
+      return new THREE.MeshStandardMaterial({ map, emissiveMap: map, emissive: '#ffffff', emissiveIntensity: 0.35, roughness: 0.15, metalness: 0.3, transparent: true, opacity: 0.94 })
+    }
+    const short = side(d), long = side(w)
+    const cap = new THREE.MeshStandardMaterial({ color: '#2a2623', roughness: 0.6 })
+    return [short, short, cap, cap, long, long]
+  }, [w, d])
+  useEffect(() => () => {
+    gable.dispose()
+    glass.forEach((m) => { m.map?.dispose(); m.dispose() })
+  }, [gable, glass])
+  return (
+    <group position={[x, 0, 0]} onClick={onClick}>
+      <mesh position={[0, ph / 2, 0]} material={glass}>
+        <boxGeometry args={[w, ph, d]} />
+      </mesh>
+      {/* weathered steel gable roof */}
+      <mesh geometry={gable} position={[0, ph, 0]}>
+        <meshStandardMaterial color="#5a3a2b" roughness={0.6} metalness={0.35} />
+        <Edges color="#1f1c1a" />
+      </mesh>
+    </group>
   )
 }
 
 function Tower({ t, props }: { t: number; props: Props }) {
   const spec = TOWERS[t]
-  const H = spec.floors * FLOOR_H
-  const pw = spec.w * 0.72, pd = spec.d * 0.72, ph = FLOOR_H * 1.3
+  const H = (residentialFloors(t) + 1) * FLOOR_H
+  const pick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); props.onTower(t) }
+  // the roof fades with the rest of the tower when another tower is chosen
+  const roof = useRef<THREE.Group>(null)
+  useFrame(() => {
+    const k = props.tower !== null && props.tower !== t ? 0.3 : 1
+    roof.current?.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.Material | undefined
+      if (!m || Array.isArray(m)) return
+      m.userData.base ??= m.opacity
+      m.transparent = true
+      m.opacity += (m.userData.base * k - m.opacity) * 0.15
+    })
+  })
   return (
     <group position={[spec.x, 0, spec.z]} rotation={[0, spec.rot, 0]}>
       {Array.from({ length: residentialFloors(t) + 1 }, (_, f) => <Floor key={f} t={t} f={f} props={props} />)}
-      {/* rooftop restaurant and gable */}
-      <mesh position={[0, H + ph / 2, 0]} onClick={(e) => { e.stopPropagation(); props.onTower(t) }}>
-        <boxGeometry args={[pw, ph, pd]} />
-        <meshStandardMaterial color="#24443b" emissive="#a9c7b8" emissiveIntensity={0.45} roughness={0.15} metalness={0.5} transparent opacity={0.85} />
-        <Edges color="#d6ebe1" />
+      {/* roof slab with a parapet line, then the rooftop restaurant and greenhouse */}
+      <group ref={roof}>
+      <mesh position={[0, H + 0.02, 0]}>
+        <boxGeometry args={[spec.w + 0.06, 0.04, spec.d + 0.06]} />
+        <meshStandardMaterial color="#2a2623" roughness={0.7} />
       </mesh>
-      <mesh position={[0, H + ph + 0.27, 0]} rotation={[0, 0, 0]}>
-        <cylinderGeometry args={[0.001, pd / 2, 0.55, 4, 1]} />
-        <meshStandardMaterial color="#5d6b65" roughness={0.6} />
-      </mesh>
+      <group position={[0, H + 0.04, 0]}>
+        <Pavilion w={spec.w * 0.5} d={spec.d * 0.72} x={-spec.w * 0.2} onClick={pick} />
+        <Pavilion w={spec.w * 0.3} d={spec.d * 0.55} x={spec.w * 0.3} onClick={pick} />
+      </group>
+      </group>
     </group>
   )
 }
