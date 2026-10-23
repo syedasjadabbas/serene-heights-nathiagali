@@ -122,13 +122,14 @@ export const route = [
   { dist: '50 m', place: 'PAF Airbase · Serene Heights', time: 'You have arrived' },
 ]
 
+// dusk-graded renders (scripts/dusk_grade.py); rooftop and sunrise are already evening/dawn light
 export const gallery = [
-  { src: '/media/snow-tower.webp', title: 'First snow on the tower', tag: 'Winter' },
-  { src: '/media/arrival-snow.webp', title: 'The drive after snowfall', tag: 'Arrival' },
-  { src: '/media/pool-aerial.webp', title: 'Glasshouse and infinity pool', tag: 'Rooftop' },
-  { src: '/media/ridge.webp', title: 'Above the cloud line', tag: 'Ridge' },
-  { src: '/media/terraces.webp', title: 'Balconies on every floor', tag: 'Residences' },
-  { src: '/media/pines.webp', title: 'In the pines', tag: 'Summer' },
+  { src: '/media/snow-tower-dusk.webp', title: 'First snow on the tower', tag: 'Winter' },
+  { src: '/media/arrival-snow-dusk.webp', title: 'The drive after snowfall', tag: 'Arrival' },
+  { src: '/media/pool-aerial-dusk.webp', title: 'Glasshouse and infinity pool', tag: 'Rooftop' },
+  { src: '/media/ridge-dusk.webp', title: 'Above the cloud line', tag: 'Ridge' },
+  { src: '/media/terraces-dusk.webp', title: 'Balconies on every floor', tag: 'Residences' },
+  { src: '/media/pines-dusk.webp', title: 'In the pines', tag: 'Summer' },
   { src: '/media/rooftop.webp', title: 'The rooftop at sunset', tag: 'Evening' },
   { src: '/media/sunrise.webp', title: 'The view at first light', tag: 'Galiyat' },
 ]
