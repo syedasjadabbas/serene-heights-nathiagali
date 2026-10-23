@@ -2,6 +2,10 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './styles.css'
 import { ScrollTrigger } from './lib/scroll'
+import { startPreload } from './lib/preload'
+
+// begin downloading the 3D engine and hero scene before React has even rendered
+startPreload()
 
 // Every load starts at the top: no restored scroll position, no jump to a #section.
 ScrollTrigger.clearScrollMemory('manual')

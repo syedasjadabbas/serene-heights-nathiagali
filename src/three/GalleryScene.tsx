@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 
-export const galleryState = { progress: 0, velocity: 0 }
+import { galleryState } from './state'
 
 const SPACING = 7.5
 const PLANE_H = 3.1
@@ -49,7 +49,7 @@ export function GalleryScene({ images, onIndex }: { images: string[]; onIndex: (
   const { camera, size } = useThree()
   const aspect = size.width / size.height
   // portrait screens: smaller planes, pulled toward the centre line
-  const fit = aspect < 0.8 ? { s: 0.48, x: 0.35 } : aspect < 1.25 ? { s: 0.72, x: 0.7 } : { s: 1, x: 1 }
+  const fit = aspect < 0.8 ? { s: 0.5, x: 0.1 } : aspect < 1.25 ? { s: 0.72, x: 0.6 } : { s: 1, x: 1 }
   const last = useRef(-1)
   const smooth = useRef({ p: 0, v: 0 })
 
@@ -90,7 +90,8 @@ export function GalleryScene({ images, onIndex }: { images: string[]; onIndex: (
       const focus = THREE.MathUtils.clamp(1 - Math.abs(d + 6.2) / (SPACING * 0.75), 0, 1)
       pl.mat.uniforms.uFocus.value = focus
       pl.mat.uniforms.uBend.value = bend * pl.side
-      pl.mat.uniforms.uFade.value = THREE.MathUtils.clamp((-d - 0.6) / 2.2, 0, 1)
+      // fade out well before a plane reaches the lens, so it never fills the screen
+      pl.mat.uniforms.uFade.value = THREE.MathUtils.clamp((-d - 2.2) / 2.4, 0, 1)
       void i
     })
     if (fi !== last.current) {

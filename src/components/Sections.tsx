@@ -1,8 +1,13 @@
-import { Suspense, useEffect, useRef, useState } from 'react'
-import { ChapterHead, LazyCanvas, Split, Swoosh, pkr, useReveal } from './common'
-import { SeasonScene } from '../three/SeasonScene'
+import { lazy, useEffect, useRef, useState } from 'react'
+import { ChapterHead, LazyCanvas, SceneFallback, Split, Swoosh, narrowScreen, pkr, smallSrc, srcSet, useReveal } from './common'
 import { gsap, reducedMotion, scrollTo } from '../lib/scroll'
-import { amenityGroups, contact, figures, ownerBenefits, pricing, residences, route, seasons, smartUnit, updates } from '../data/site'
+import { Link } from '../lib/router'
+import { trackContact, trackLead } from '../lib/analytics'
+import { CookieSettingsLink } from './Chrome'
+import { progress } from '../data/pages'
+import { amenityGroups, contact, figures, ownerBenefits, pricing, residences, route, seasons, smartUnit } from '../data/site'
+
+const SeasonScene = lazy(() => import('../three/SeasonScene').then((m) => ({ default: m.SeasonScene })))
 
 /* ---------- key figures, counted up on entry ---------- */
 export function Figures() {
@@ -46,7 +51,7 @@ export function Statement() {
       <div className="wrap statement" ref={ref}>
         <Split text="A resort you own, run like a hotel." em="run like a hotel" />
         <figure className="statement-pic" data-reveal>
-          <div className="arch"><img src="/media/rooftop.jpg" alt="Rooftop terraces of Serene Heights at sunset over the pines" /></div>
+          <div className="arch"><img src="/media/rooftop.webp" srcSet={srcSet('/media/rooftop.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Rooftop terraces of Serene Heights at sunset over the pines" /></div>
           <Swoosh />
         </figure>
         <div className="copy">
@@ -69,11 +74,9 @@ export function Seasons() {
         <ChapterHead left="The resort" right="Open all year" />
         <div className="seasons">
           <div className="season-frame arch-wide" data-reveal>
-            <LazyCanvas dpr={[1, 1.5]} gl={{ antialias: false }} orthographic camera={{ position: [0, 0, 1] }}>
-              <Suspense fallback={null}>
-                <SeasonScene season={season} a={seasons.winter.img} b={seasons.summer.img} />
-              </Suspense>
-            </LazyCanvas>
+            <LazyCanvas scene={SeasonScene} sceneProps={{ season, a: narrowScreen ? smallSrc(seasons.winter.img) : seasons.winter.img, b: narrowScreen ? smallSrc(seasons.summer.img) : seasons.summer.img }}
+              warmup="1200px" canvas={{ dpr: [1, 1.5], gl: { antialias: false }, orthographic: true, camera: { position: [0, 0, 1] } }}
+              fallback={<SceneFallback src={s.img} alt={s.title} />} />
             <span className="frame-cap label">{s.months}</span>
           </div>
           <div className="season-text">
@@ -114,9 +117,9 @@ export function Residences() {
       <div className="wrap" ref={ref}>
         <ChapterHead left="The residences" right="Three towers" />
         <div className="res-grid">
-          <figure className="r1 clip arch" data-reveal><img src="/media/approach.jpg" alt="Arrival road leading to the tower entrance, lamp posts and pines" /><figcaption className="label">The arrival</figcaption></figure>
-          <figure className="r2 clip" data-reveal><img src="/media/terraces.jpg" alt="Balconies and rooftop glasshouse of the tower" /><figcaption className="label">Balconies on every floor</figcaption></figure>
-          <figure className="r3 clip" data-reveal><img src="/media/rooftop.jpg" alt="Rooftop terraces at sunset over the forest" /><figcaption className="label">The rooftop at sunset</figcaption></figure>
+          <figure className="r1 clip arch" data-reveal><img src="/media/approach.webp" srcSet={srcSet('/media/approach.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Arrival road leading to the tower entrance, lamp posts and pines" /><figcaption className="label">The arrival</figcaption></figure>
+          <figure className="r2 clip" data-reveal><img src="/media/terraces.webp" srcSet={srcSet('/media/terraces.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Balconies and rooftop glasshouse of the tower" /><figcaption className="label">Balconies on every floor</figcaption></figure>
+          <figure className="r3 clip" data-reveal><img src="/media/rooftop.webp" srcSet={srcSet('/media/rooftop.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="Rooftop terraces at sunset over the forest" /><figcaption className="label">The rooftop at sunset</figcaption></figure>
         </div>
         <div className="res-intro">
           <Split text="One, two and three bedrooms. Furnished and ready." />
@@ -173,7 +176,7 @@ export function Amenities() {
             </div>
           </div>
           <div className="amen-panel" role="tabpanel" id="amen-panel" aria-labelledby={'tab-' + i} data-reveal>
-            <div className="pic arch-wide" ref={pic}><img key={g.img} src={g.img} alt={g.name} /></div>
+            <div className="pic arch-wide" ref={pic}><img key={g.img} src={g.img} srcSet={srcSet(g.img)} sizes="(max-width: 820px) 100vw, 55vw" alt={g.name} /></div>
             <ul key={g.name}>
               {g.items.map(([t, d]) => <li key={t}><b>{t}</b><small>{d}</small></li>)}
             </ul>
@@ -291,7 +294,8 @@ export function Founder() {
       <div className="wrap founder" ref={ref}>
         <div data-reveal>
           <span className="label">Construction updates</span>
-          <div className="updates">{updates.map((u) => <span key={u}>{u}</span>)}</div>
+          <div className="updates">{progress.slice(0, 6).map((u) => <span key={u.date}>{u.date}</span>)}</div>
+          <Link className="btn ghost small founder-link" to="/progress">Watch the site visits</Link>
         </div>
         <div>
           <Split as="blockquote" text="“Zero maintenance charges. Zero hidden costs. What you own is what you own.”" em="What you own is what you own" />
@@ -327,13 +331,14 @@ export function Enquire() {
       return
     }
     // TODO: connect to the client's CRM / email endpoint before launch
+    trackLead(String(f.get('interest') || ''))
     setMsg('Thank you. The sales team will call you back shortly.')
     e.currentTarget.reset()
     setUnit('')
   }
   return (
     <section className="band enquire" id="enquire">
-      <img src="/media/mist-valley.jpg" alt="" aria-hidden="true" />
+      <img src="/media/mist-valley.webp" srcSet={srcSet('/media/mist-valley.webp')} sizes="(max-width: 760px) 100vw, 50vw" loading="lazy" alt="" aria-hidden="true" />
       <div className="wrap enq" ref={ref}>
         <div>
           <span className="label">Enquire</span>
@@ -361,6 +366,7 @@ export function Enquire() {
           </div>
           <div className="field full"><label htmlFor="f-unit">Apartment (optional)</label><input id="f-unit" name="unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. A-503" /></div>
           <button className="btn" type="submit">Request a call back</button>
+          <p className="fine form-note">We use your details only to answer this enquiry. See our <Link to="/privacy-policy">privacy policy</Link>.</p>
           {msg && <p className="form-msg" role="status">{msg}</p>}
         </form>
       </div>
@@ -369,25 +375,38 @@ export function Enquire() {
 }
 
 export function Footer() {
-  const go = (h: string) => (e: React.MouseEvent) => { e.preventDefault(); scrollTo(h) }
+  const tel = (n: string) => `tel:${n.replace(/[^\d+]/g, '')}`
   return (
     <footer>
       <div className="wrap foot">
         <div>
-          <a className="mark logo" href="#top" onClick={go('#top')} aria-label="Serene Heights Hotels & Resorts, back to top"><img src="/media/logo.png" alt="Serene Heights Hotels & Resorts" width="745" height="517" /></a>
+          <Link className="mark logo" to="/" aria-label="Serene Heights Hotels & Resorts, home"><img src="/media/logo.png" alt="Serene Heights Hotels & Resorts" width="745" height="517" /></Link>
           <p className="fine" style={{ marginTop: 16, maxWidth: '36ch' }}>Main Nathia Gali road, near PAF Airbase, Nathia Gali, Khyber Pakhtunkhwa. Managed by DM Consortium.</p>
         </div>
-        <div><span className="label">Explore</span><ul>
-          <li><a href="#residences" onClick={go('#residences')}>Residences</a></li>
-          <li><a href="#amenities" onClick={go('#amenities')}>Amenities</a></li>
-          <li><a href="#ownership" onClick={go('#ownership')}>Payment plan</a></li>
-          <li><a href="#location" onClick={go('#location')}>Location</a></li>
+        <div><span className="label">The resort</span><ul>
+          <li><Link to="/#residences">Residences</Link></li>
+          <li><Link to="/#select">Choose an apartment</Link></li>
+          <li><Link to="/#amenities">Amenities</Link></li>
+          <li><Link to="/#ownership">Payment plan</Link></li>
+          <li><Link to="/#location">Location</Link></li>
         </ul></div>
-        <div><span className="label">Follow</span><ul>
+        <div><span className="label">More</span><ul>
+          <li><Link to="/about">About</Link></li>
+          <li><Link to="/smart-property-unit">Smart Property Unit</Link></li>
+          <li><Link to="/floor-plans">Floor plans</Link></li>
+          <li><Link to="/progress">Construction progress</Link></li>
+          <li><Link to="/blog">Journal</Link></li>
+        </ul></div>
+        <div><span className="label">Contact</span><ul>
+          <li><a href={tel(contact.uan)} onClick={() => trackContact('phone')}>{contact.uan}</a></li>
+          <li><a href={tel(contact.mobile)} onClick={() => trackContact('phone')}>{contact.mobile}</a></li>
+          <li><Link to="/contact">Offices & enquiries</Link></li>
           {contact.social.map((s) => <li key={s.label}><a href={s.href} target="_blank" rel="noopener">{s.label}</a></li>)}
         </ul></div>
-        <div><span className="label">Contact</span><ul><li>{contact.uan}</li><li>{contact.mobile}</li></ul></div>
-        <p className="fine">Prices, payment terms and specifications follow the current published price list and may change. Rental income and profit share depend on hotel occupancy and operating results and are not guaranteed. Renders are illustrative. © 2026 Serene Heights Hotels &amp; Resorts.</p>
+        <div className="foot-base">
+          <p className="fine">Prices, payment terms and specifications follow the current published price list and may change. Rental income and profit share depend on hotel occupancy and operating results and are not guaranteed. Renders are illustrative. © 2026 Serene Heights Hotels &amp; Resorts.</p>
+          <p className="fine foot-legal"><Link to="/privacy-policy">Privacy policy</Link><CookieSettingsLink /></p>
+        </div>
       </div>
     </footer>
   )

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { gsap, lockScroll, reducedMotion } from '../lib/scroll'
+import { whenHeroReady } from '../lib/preload'
 
-// Draws the wordmark and a loading line while fonts and the first scene warm up,
-// then lifts away like cloud and hands over to the hero intro.
+// Shows the logo and a loading line only for as long as the hero actually needs: the line
+// creeps toward 90% while loading, then completes and lifts away as soon as the hero has
+// drawn its first frame and the fonts are in (never longer than 8 s).
 export function Preloader({ onDone }: { onDone: () => void }) {
   const root = useRef<HTMLDivElement>(null)
   const num = useRef<HTMLSpanElement>(null)
@@ -11,18 +13,28 @@ export function Preloader({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     lockScroll(true)
     const counter = { v: 0 }
-    const tl = gsap.timeline({ paused: true })
-    tl.to(counter, {
-      v: 100, duration: reducedMotion ? 0.2 : 2.4, ease: 'power2.inOut',
-      onUpdate: () => { if (num.current) num.current.textContent = String(Math.round(counter.v)).padStart(3, '0') },
+    const show = () => {
+      if (num.current) num.current.textContent = String(Math.round(counter.v)).padStart(3, '0')
+      const line = root.current?.querySelector<HTMLElement>('.pre-line')
+      if (line) line.style.transform = `scaleX(${counter.v / 100})`
+    }
+    // creep toward 90% while things load
+    const creep = gsap.to(counter, { v: 90, duration: reducedMotion ? 0.1 : 3, ease: 'power2.out', onUpdate: show })
+    let finish: gsap.core.Timeline | null = null
+    const fonts = Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))])
+    const minShow = new Promise((r) => setTimeout(r, reducedMotion ? 0 : 350))
+    let cancelled = false
+    Promise.all([whenHeroReady(), fonts, minShow]).then(() => {
+      if (cancelled) return
+      creep.kill()
+      finish = gsap.timeline()
+        .to(counter, { v: 100, duration: 0.2, ease: 'power1.out', onUpdate: show })
+        .to('.pre-inner', { y: -20, opacity: 0, duration: 0.3, ease: 'power2.in' })
+        .to(root.current, { clipPath: 'inset(0 0 100% 0)', duration: 0.6, ease: 'expo.inOut' }, '-=0.15')
+        .add(() => { lockScroll(false); onDone() }, '-=0.55')
+        .add(() => setGone(true))
     })
-      .to('.pre-line', { scaleX: 1, duration: 2.4, ease: 'power2.inOut' }, 0)
-      .to('.pre-inner', { y: -30, opacity: 0, duration: 0.7, ease: 'power2.in' }, '+=0.25')
-      .to(root.current, { clipPath: 'inset(0 0 100% 0)', duration: 1.1, ease: 'expo.inOut' }, '-=0.2')
-      .add(() => { lockScroll(false); onDone() }, '-=0.6')
-      .add(() => setGone(true))
-    Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]).then(() => tl.play())
-    return () => { tl.kill() }
+    return () => { cancelled = true; creep.kill(); finish?.kill() }
   }, [onDone])
 
   if (gone) return null

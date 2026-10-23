@@ -1,12 +1,15 @@
-import { useMemo, useRef, useState } from 'react'
+import { lazy, useMemo, useRef, useState } from 'react'
 import { LazyCanvas, ChapterHead, Split, pkr } from './common'
-import { SelectorScene, coarsePointer, type FloorRef } from '../three/SelectorScene'
+import type { FloorRef } from '../three/SelectorScene'
+import { coarsePointer, hasWebGL } from '../lib/device'
 import { scrollTo } from '../lib/scroll'
 import {
   UNITS, SAMPLE_INVENTORY, TOWER_NAMES, TOWER_LETTERS, floorUnits, availableOn, residentialFloors,
   unitPrice, unitBooking, unitMonthly, type Unit, type Status,
 } from '../data/units'
-import { TOWERS } from '../three/Towers'
+import { TOWERS } from '../data/towers'
+
+const SelectorScene = lazy(() => import('../three/SelectorScene').then((m) => ({ default: m.SelectorScene })))
 
 const STATUS_LABEL: Record<Status, string> = { available: 'Available', booked: 'Booked', sold: 'Sold' }
 const bedsLabel = (b: number) => `${b} bed`
@@ -140,6 +143,7 @@ export function Selector() {
   const labelEls = useRef<(HTMLButtonElement | null)[]>([])
   const spin = useRef(0.19)
   const stage = useRef<HTMLDivElement>(null)
+  const webgl = useMemo(() => hasWebGL(), [])
 
   const pickTower = (t: number | null) => { setTower(t); setFloor(null); setUnitId(null) }
   const pickFloor = ({ tower: t, floor: f }: FloorRef) => { setTower(t); setFloor(f); setUnitId(null) }
@@ -163,10 +167,10 @@ export function Selector() {
 
         <div className="sel-stage" ref={stage}>
           <div className="sel-canvas">
-            <LazyCanvas dpr={[1, 1.75]} camera={{ fov: 36, position: [4, 8.5, 21] }} gl={{ antialias: true }}>
-              <SelectorScene spin={spin} tower={tower} floor={floor} hover={hover} onHover={setHover} onPick={pickFloor} onTower={(t) => pickTower(t)} labelEls={labelEls} />
-            </LazyCanvas>
-            <div className="sel-labels">
+            <LazyCanvas scene={SelectorScene} sceneProps={{ spin, tower, floor, hover, onHover: setHover, onPick: pickFloor, onTower: pickTower, labelEls }}
+              warmup="1500px" canvas={{ dpr: [1, 1.75], camera: { fov: 36, position: [4, 8.5, 21] }, gl: { antialias: true } }}
+              fallback={<div className="sel-fallback"><img src="/media/terraces-960.webp" alt="Serene Heights towers" /><p>The 3D model isn’t available on this device. Choose a tower and floor from the list.</p></div>} />
+            <div className="sel-labels" hidden={!webgl}>
               {TOWER_NAMES.map((n, t) => (
                 <button key={n} type="button" ref={(el) => { labelEls.current[t] = el }} className={`tower-tag${tower === t ? ' on' : ''}`} onClick={() => pickTower(t)}>
                   {n}<small>{TOWERS[t].floors - 1} floors · {UNITS.filter((u) => u.tower === t && u.status === 'available').length} available</small>
@@ -176,7 +180,7 @@ export function Selector() {
             <div className="sel-hint label">
               {hover ? `${TOWER_NAMES[hover.tower]} · Floor ${hover.floor} · ${availableOn(hover.tower, hover.floor)} of ${floorUnits(hover.tower, hover.floor).length} available` : coarsePointer ? 'Tap a floor' : 'Drag to turn · Click a floor'}
             </div>
-            {coarsePointer && (
+            {coarsePointer && webgl && (
               <div className="turn">
                 <button type="button" aria-label="Turn the model left" onClick={() => { spin.current -= Math.PI / 4 }}>←</button>
                 <button type="button" aria-label="Turn the model right" onClick={() => { spin.current += Math.PI / 4 }}>→</button>
@@ -187,13 +191,13 @@ export function Selector() {
           <aside className="sel-panel" aria-live="polite">
             <div className="seg tabs" role="group" aria-label="Tower">
               <button type="button" aria-pressed={tower === null} onClick={() => pickTower(null)}>All</button>
-              {TOWER_LETTERS.map((l, t) => <button key={l} type="button" aria-pressed={tower === t} onClick={() => pickTower(t)}>Tower {l}</button>)}
+              {TOWER_LETTERS.map((l, t) => <button key={l} type="button" aria-pressed={tower === t} onClick={() => pickTower(t)} aria-label={`Tower ${l}`}><span className="hide-sm">Tower </span>{l}</button>)}
             </div>
 
             {tower === null && (
               <div className="panel-empty">
                 <h3>Three towers, {UNITS.length} apartments.</h3>
-                <p>Choose a tower above or click any floor on the model. Darker floors are fully sold.</p>
+                <p>Choose a tower above or select any floor on the model. Darker floors are fully sold.</p>
               </div>
             )}
 

@@ -5,4 +5,5 @@ export const heroState = {
   progress: 0, // 0 → 1 scroll progress through the pinned hero
   pointerX: 0,
   pointerY: 0,
+  ready: false, // true once the hero has drawn its first frame (the preloader waits for this)
 }

@@ -125,6 +125,9 @@ export const PLACES: Place[] = [
   { name: 'Changla Gali', lat: 34.01, lon: 73.382, size: 30, kind: 'town', label: false },
 ]
 
+/** Places that get an on-map label, in label order (Serene Heights last). */
+export const LABELLED: Place[] = [...PLACES.filter((p) => p.label !== false), SERENE]
+
 // Expressway and Murree road through the Galiyat, approximate alignment.
 export const ROUTE_MAIN: [number, number][] = [
   [33.698, 73.06], [33.722, 73.12], [33.738, 73.175], [33.77, 73.235], [33.81, 73.27],

@@ -53,10 +53,22 @@ function CameraRig() {
 const easeOut = (t: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3)
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 
+// Announces the first finished frame (shaders compiled, scene on screen) to the preloader.
+function FirstFrame() {
+  const frames = useMemo(() => ({ n: 0 }), [])
+  useFrame(() => {
+    if (heroState.ready || ++frames.n < 2) return
+    heroState.ready = true
+    window.dispatchEvent(new Event('hero-ready'))
+  })
+  return null
+}
+
 export function HeroScene({ lite }: { lite: boolean }) {
   return (
     <>
       <color attach="background" args={['#12261f']} />
+      <FirstFrame />
       <CameraRig />
       <Landscape lite={lite} />
       <group scale={TOWER_SCALE}>

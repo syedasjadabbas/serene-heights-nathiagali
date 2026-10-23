@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "src/styles.css"
+        ],
+        "createdAt": "2026-10-23T13:40:37.042Z",
+        "reason": "Intentional ERA-style accent words (sage gradient on one key phrase per headline); user approved the UI as 'perfect' on 2026-10-23"
+      }
+    ]
+  }
+}

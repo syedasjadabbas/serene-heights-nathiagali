@@ -1,25 +1,64 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode, type ElementType } from 'react'
-import { Canvas, type CanvasProps } from '@react-three/fiber'
+import { Component, Fragment, Suspense, lazy, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode, type ElementType } from 'react'
+import type { CanvasProps } from '@react-three/fiber'
 import { gsap, reducedMotion } from '../lib/scroll'
+import { hasWebGL } from '../lib/device'
 
-// Canvas that only renders while on screen, so several WebGL scenes can share a page.
-export function LazyCanvas({ children, warmup = '200px', ...props }: CanvasProps & { children: ReactNode; warmup?: string }) {
+const CanvasHost = lazy(() => import('../three/CanvasHost'))
+
+// Shows `fallback` if the 3D scene throws (lost context, driver bug, failed chunk).
+class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() { return this.state.failed ? this.props.fallback : this.props.children }
+}
+
+// 3D canvas that loads the engine and its scene only when it nears the screen, renders only
+// while visible, and shows `fallback` (usually a render photo) on devices without WebGL.
+export function LazyCanvas<P extends object>({ scene, sceneProps, canvas = {}, fallback = null, warmup = '200px', eager = false }: {
+  scene: ComponentType<P>
+  sceneProps: P
+  canvas?: Omit<CanvasProps, 'children'>
+  fallback?: ReactNode
+  warmup?: string
+  /** mount and render straight away (the hero), instead of waiting to near the screen */
+  eager?: boolean
+}) {
   const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(eager)
+  const [mounted, setMounted] = useState(eager)
+  const supported = useMemo(() => hasWebGL(), [])
   useEffect(() => {
     const el = ref.current
-    if (!el) return
-    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: warmup })
+    if (!el || !supported) return
+    const io = new IntersectionObserver(([e]) => {
+      setVisible(e.isIntersecting)
+      if (e.isIntersecting) setMounted(true)
+    }, { rootMargin: warmup })
     io.observe(el)
     return () => io.disconnect()
-  }, [warmup])
+  }, [warmup, supported])
   return (
-    <div ref={ref} className="canvas-wrap">
-      <Canvas {...props} frameloop={visible ? 'always' : 'never'}>
-        {children}
-      </Canvas>
+    <div ref={ref} className="canvas-wrap" aria-hidden="true">
+      {!supported ? fallback : mounted && (
+        <SceneBoundary fallback={fallback}>
+          <Suspense fallback={null}>
+            <CanvasHost scene={scene as ComponentType<object>} sceneProps={sceneProps} canvas={canvas} frameloop={visible ? 'always' : 'never'} />
+          </Suspense>
+        </SceneBoundary>
+      )}
     </div>
   )
+}
+
+/** 960 px version of a /media photo, for phones and small frames. */
+export const smallSrc = (src: string) => src.replace(/\.webp$/, '-960.webp')
+/** srcSet so phones download the 960 px photo and larger screens the 1800 px one. */
+export const srcSet = (src: string) => `${smallSrc(src)} 960w, ${src} 1800w`
+export const narrowScreen = typeof window !== 'undefined' && window.innerWidth < 760
+
+/** Full-bleed photo used where a 3D scene can't run. */
+export function SceneFallback({ src, alt = '', position = '50% 40%' }: { src: string; alt?: string; position?: string }) {
+  return <img className="scene-fallback" src={src} srcSet={srcSet(src)} sizes="100vw" alt={alt} style={{ objectPosition: position }} />
 }
 
 // Heading whose words rise out of a mask when scrolled into view.

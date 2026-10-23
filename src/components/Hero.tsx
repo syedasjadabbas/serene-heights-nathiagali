@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
-import { LazyCanvas } from './common'
-import { HeroScene } from '../three/HeroScene'
+import { lazy, useEffect, useRef } from 'react'
+import { LazyCanvas, SceneFallback } from './common'
 import { heroState } from '../three/heroState'
 import { gsap, scrollTo } from '../lib/scroll'
+
+const HeroScene = lazy(() => import('../three/HeroScene').then((m) => ({ default: m.HeroScene })))
 
 const lite = typeof window !== 'undefined' && (window.innerWidth < 760 || navigator.hardwareConcurrency <= 4)
 
@@ -25,10 +26,10 @@ export function Hero({ started }: { started: boolean }) {
     if (!started) return
     const ctx = gsap.context(() => {
     const tl = gsap.timeline()
-    tl.to(heroState, { intro: 1, duration: 4.2, ease: 'power2.inOut' })
-      .from('.hero-stage[data-i="0"] .line > span', { yPercent: 115, duration: 1.4, ease: 'expo.out', stagger: 0.12 }, 0.9)
-      .from('.hero-stage[data-i="0"] .fade', { opacity: 0, y: 20, duration: 1.2, ease: 'power2.out', stagger: 0.1 }, 1.6)
-      .from('.hero-hud', { opacity: 0, duration: 1.2 }, 2.2)
+    tl.to(heroState, { intro: 1, duration: 2.4, ease: 'power2.inOut' })
+      .from('.hero-stage[data-i="0"] .line > span', { yPercent: 115, duration: 1.2, ease: 'expo.out', stagger: 0.1 }, 0.3)
+      .from('.hero-stage[data-i="0"] .fade', { opacity: 0, y: 20, duration: 1, ease: 'power2.out', stagger: 0.1 }, 0.8)
+      .from('.hero-hud', { opacity: 0, duration: 1 }, 1.2)
     }, section)
     return () => ctx.revert()
   }, [started])
@@ -58,9 +59,9 @@ export function Hero({ started }: { started: boolean }) {
   return (
     <section className="hero" id="top" ref={section}>
       <div className="hero-sticky">
-        <LazyCanvas dpr={[1, lite ? 1.25 : 1.75]} camera={{ fov: 42, near: 0.1, far: 700, position: [0, 3, 40] }} gl={{ antialias: false, powerPreference: 'high-performance' }}>
-          <HeroScene lite={lite} />
-        </LazyCanvas>
+        <LazyCanvas scene={HeroScene} sceneProps={{ lite }} eager
+          canvas={{ dpr: [1, lite ? 1.25 : 1.75], camera: { fov: 42, near: 0.1, far: 700, position: [0, 3, 40] }, gl: { antialias: false, powerPreference: 'high-performance' } }}
+          fallback={<SceneFallback src="/media/snow-tower.webp" position="50% 30%" />} />
         <div className="hero-shade" />
 
         <div className="wrap hero-stages">

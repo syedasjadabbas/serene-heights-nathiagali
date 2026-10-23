@@ -23,7 +23,7 @@ export function startSmoothScroll() {
 }
 
 export function scrollTo(target: string | HTMLElement) {
-  if (lenis) lenis.scrollTo(target, { duration: 1.6 })
+  if (lenis) { lenis.resize(); lenis.scrollTo(target, { duration: 1.6 }) }
   else {
     const el = typeof target === 'string' ? document.querySelector(target) : target
     el?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' })
@@ -32,7 +32,8 @@ export function scrollTo(target: string | HTMLElement) {
 
 // Jump without animation, even while scrolling is locked.
 export function jumpTo(y: number) {
-  if (lenis) lenis.scrollTo(y, { immediate: true, force: true })
+  // re-measure first: after a page change the old page's height may still be cached
+  if (lenis) { lenis.resize(); lenis.scrollTo(y, { immediate: true, force: true }) }
   else window.scrollTo(0, y)
 }
 

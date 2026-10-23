@@ -2,12 +2,12 @@ import { use, useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import * as THREE from 'three'
-import { elevation, loadDem, project, EXAG, MAP_W, MAP_D, PLACES, SERENE, ROUTE_MAIN, ROUTE_ABBOTTABAD, type Place } from './geo'
+import { elevation, loadDem, project, EXAG, MAP_W, MAP_D, PLACES, SERENE, ROUTE_MAIN, ROUTE_ABBOTTABAD, LABELLED, type Place } from './geo'
 import { fogGLSL } from './shaders'
 
-// progress: where the scroll is (0–1). shown: what the scene plays, which follows the
-// scroll at a capped pace so the whole drive takes at least DRIVE_SECONDS.
-export const mapState = { progress: 0, shown: 0, pointerX: 0, pointerY: 0 }
+import { mapState } from './state'
+
+// mapState.shown follows the scroll at a capped pace so the whole drive takes at least DRIVE_SECONDS.
 const DRIVE_SECONDS = 8
 
 function Pacer() {
@@ -272,7 +272,6 @@ function Beacon({ on }: { on: React.RefObject<number> }) {
 
 /* ---------- labels: plain DOM, positioned from the camera every frame ---------- */
 
-export const LABELLED: Place[] = [...PLACES.filter((p) => p.label !== false), SERENE]
 
 function LabelProjector({ els }: { els: React.RefObject<(HTMLDivElement | null)[]> }) {
   const { camera, size } = useThree()

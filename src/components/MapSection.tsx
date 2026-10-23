@@ -1,7 +1,11 @@
-import { Suspense, useCallback, useEffect, useRef } from 'react'
+import { lazy, useCallback, useEffect, useRef } from 'react'
 import { LazyCanvas, ChapterHead } from './common'
-import { MapScene, mapState, LABELLED } from '../three/MapScene'
-import { gsap, ScrollTrigger, jumpTo, lockScroll } from '../lib/scroll'
+import { mapState } from '../three/state'
+import { LABELLED } from '../three/geo'
+import { hasWebGL } from '../lib/device'
+import { gsap, ScrollTrigger, jumpTo, lockScroll, reducedMotion } from '../lib/scroll'
+
+const MapScene = lazy(() => import('../three/MapScene').then((m) => ({ default: m.MapScene })))
 
 const lite = typeof window !== 'undefined' && (window.innerWidth < 760 || navigator.hardwareConcurrency <= 4)
 
@@ -17,6 +21,11 @@ const STOPS = [
 ]
 
 export function MapSection() {
+  if (!hasWebGL()) return null
+  return <MapSection3D />
+}
+
+function MapSection3D() {
   const section = useRef<HTMLElement>(null)
   const card = useRef<HTMLDivElement>(null)
   const kicker = useRef<HTMLSpanElement>(null)
@@ -62,7 +71,7 @@ export function MapSection() {
       onUpdate: (self) => {
         mapState.progress = self.progress
         if (self.progress < 0.6) hold.armed = true
-        if (hold.armed && !hold.active && self.direction > 0 && self.progress >= HOLD_AT) startHold(self)
+        if (!reducedMotion && hold.armed && !hold.active && self.direction > 0 && self.progress >= HOLD_AT) startHold(self)
       },
     })
     const onMove = (e: PointerEvent) => {
@@ -93,11 +102,8 @@ export function MapSection() {
   return (
     <section className="map-section" id="location" ref={section}>
       <div className="map-sticky">
-        <LazyCanvas warmup="1200px" dpr={[1, lite ? 1.25 : 1.75]} camera={{ fov: 38, near: 0.1, far: 400, position: [4, 78, 64] }} gl={{ antialias: false, powerPreference: 'high-performance' }}>
-          <Suspense fallback={null}>
-            <MapScene lite={lite} onStop={onStop} labelEls={labelEls} />
-          </Suspense>
-        </LazyCanvas>
+        <LazyCanvas scene={MapScene} sceneProps={{ lite, onStop, labelEls }} warmup="2000px"
+          canvas={{ dpr: [1, lite ? 1.25 : 1.75], camera: { fov: 38, near: 0.1, far: 400, position: [4, 78, 64] }, gl: { antialias: false, powerPreference: 'high-performance' } }} />
         <div className="map-shade" />
         <div className="map-labels" aria-hidden="true">
           {LABELLED.map((pl, i) => (

@@ -4,7 +4,7 @@
 // below is generated to exercise the selector. Before launch, replace
 // `buildSampleUnits()` with the real list in the same `Unit` shape (unit number,
 // tower, floor, position, bedrooms, area, view, status).
-import { TOWERS } from '../three/Towers'
+import { TOWERS } from './towers'
 import { pricing } from './site'
 
 export const SAMPLE_INVENTORY = true

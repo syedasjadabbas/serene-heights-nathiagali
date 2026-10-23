@@ -29,13 +29,13 @@ export const seasons = {
     months: 'December – March',
     title: 'Snow on the pines, warmth inside.',
     body: 'A heated infinity pool, sauna and jacuzzi, and a rooftop restaurant looking over the snow. Nathia Gali goes quiet in winter, and Serene Heights stays open through it.',
-    img: '/media/winter-side.jpg',
+    img: '/media/winter-side.webp',
   },
   summer: {
     months: 'April – November',
     title: 'Cool air when the plains are at 45°.',
     body: 'Hiking trails, the zipline and rock climbing, archery and mini golf through the day, and the telescope on the roof once the sky clears at night.',
-    img: '/media/valley-tower.jpg',
+    img: '/media/valley-tower.webp',
   },
 }
 
@@ -48,7 +48,7 @@ export const residences = [
 
 export const amenityGroups = [
   {
-    name: 'Water & wellness', img: '/media/pool-aerial.jpg',
+    name: 'Water & wellness', img: '/media/pool-aerial.webp',
     items: [
       ['Heated infinity pool', 'Valley views, open all year, lifeguard on duty'],
       ['Sauna & jacuzzi', 'With dedicated massage therapy rooms'],
@@ -57,7 +57,7 @@ export const amenityGroups = [
     ],
   },
   {
-    name: 'Adventure', img: '/media/pines.jpg',
+    name: 'Adventure', img: '/media/pines.webp',
     items: [
       ['Zipline', 'Through the resort grounds, fully supervised'],
       ['Rock climbing', 'Outdoor wall for every skill level'],
@@ -67,21 +67,21 @@ export const amenityGroups = [
     ],
   },
   {
-    name: 'The rooftop table', img: '/media/rooftop.jpg',
+    name: 'The rooftop table', img: '/media/rooftop.webp',
     items: [
       ['Rooftop restaurant', 'By Coffee, Tea & Company. Breakfast, lunch and dinner at 7,906 ft'],
       ['Room service', 'From the same kitchen, to your apartment'],
     ],
   },
   {
-    name: 'After dark', img: '/media/ridge.jpg',
+    name: 'After dark', img: '/media/ridge.webp',
     items: [
       ['Refractor telescope', 'Stargazing above the cloud line, away from city light'],
       ['Lit pathways', 'Street lighting across the grounds'],
     ],
   },
   {
-    name: 'Everyday ease', img: '/media/approach.jpg',
+    name: 'Everyday ease', img: '/media/approach.webp',
     items: [
       ['24/7 power backup', 'Generators tested and maintained'],
       ['Dedicated parking floor', 'Covered, out of the weather'],
@@ -123,14 +123,14 @@ export const route = [
 ]
 
 export const gallery = [
-  { src: '/media/snow-tower.jpg', title: 'First snow on the tower', tag: 'Winter' },
-  { src: '/media/arrival-snow.jpg', title: 'The drive after snowfall', tag: 'Arrival' },
-  { src: '/media/pool-aerial.jpg', title: 'Glasshouse and infinity pool', tag: 'Rooftop' },
-  { src: '/media/ridge.jpg', title: 'Above the cloud line', tag: 'Ridge' },
-  { src: '/media/terraces.jpg', title: 'Balconies on every floor', tag: 'Residences' },
-  { src: '/media/pines.jpg', title: 'In the pines', tag: 'Summer' },
-  { src: '/media/rooftop.jpg', title: 'The rooftop at sunset', tag: 'Evening' },
-  { src: '/media/sunrise.jpg', title: 'The view at first light', tag: 'Galiyat' },
+  { src: '/media/snow-tower.webp', title: 'First snow on the tower', tag: 'Winter' },
+  { src: '/media/arrival-snow.webp', title: 'The drive after snowfall', tag: 'Arrival' },
+  { src: '/media/pool-aerial.webp', title: 'Glasshouse and infinity pool', tag: 'Rooftop' },
+  { src: '/media/ridge.webp', title: 'Above the cloud line', tag: 'Ridge' },
+  { src: '/media/terraces.webp', title: 'Balconies on every floor', tag: 'Residences' },
+  { src: '/media/pines.webp', title: 'In the pines', tag: 'Summer' },
+  { src: '/media/rooftop.webp', title: 'The rooftop at sunset', tag: 'Evening' },
+  { src: '/media/sunrise.webp', title: 'The view at first light', tag: 'Galiyat' },
 ]
 
 export const updates = ['April 2026', 'December 2025', 'September 2025', 'April 2025', 'July 2024']

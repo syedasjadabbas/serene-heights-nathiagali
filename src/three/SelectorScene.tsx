@@ -19,7 +19,7 @@ const COLORS = {
   full: new THREE.Color('#4f6b62'),
 }
 
-export const coarsePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+import { coarsePointer } from '../lib/device'
 
 type Props = {
   spin: React.RefObject<number> // target azimuth for touch devices, nudged by the turn buttons
