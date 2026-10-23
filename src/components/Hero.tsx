@@ -7,7 +7,7 @@ import { gsap, scrollTo } from '../lib/scroll'
 const lite = typeof window !== 'undefined' && (window.innerWidth < 760 || navigator.hardwareConcurrency <= 4)
 
 // Pinned for four screens: the camera flies from the valley to the rooftop
-// while four short statements hand over to each other, ending on the real render.
+// while four short statements hand over to each other.
 export function Hero({ started }: { started: boolean }) {
   const section = useRef<HTMLElement>(null)
 
@@ -50,7 +50,6 @@ export function Hero({ started }: { started: boolean }) {
         if (i > 0) tl.fromTo(s, { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: span * 0.3, ease: 'power2.out' }, at)
         if (i < stages.length - 1) tl.to(s, { opacity: 0, y: -60, duration: span * 0.3, ease: 'power2.in' }, at + span * 0.68)
       })
-      tl.fromTo('.hero-photo', { opacity: 0, scale: 1.12 }, { opacity: 1, scale: 1, duration: 0.16 }, 0.84)
       tl.to('.hero-progress i', { scaleY: 1, duration: 1 }, 0)
     }, el)
     return () => ctx.revert()
@@ -62,9 +61,6 @@ export function Hero({ started }: { started: boolean }) {
         <LazyCanvas dpr={[1, lite ? 1.25 : 1.75]} camera={{ fov: 42, near: 0.1, far: 700, position: [0, 3, 40] }} gl={{ antialias: false, powerPreference: 'high-performance' }}>
           <HeroScene lite={lite} />
         </LazyCanvas>
-        <div className="hero-photo" aria-hidden="true">
-          <img src="/media/snow-tower.jpg" alt="" />
-        </div>
         <div className="hero-shade" />
 
         <div className="wrap hero-stages">
@@ -75,7 +71,6 @@ export function Hero({ started }: { started: boolean }) {
               <span className="line l3"><span>Winter</span><span className="em">Resort</span></span>
             </h1>
             <p className="hero-tag caps fade">7,906 ft above the sea.<br />The place where winter becomes a stay.</p>
-            <p className="lede fade">Fully furnished hotel apartments in the pines above Nathia Gali. Own one, stay in it, and let it earn while you are away.</p>
           </div>
           <div className="hero-stage" data-i="1">
             <p className="label">Two hours from Islamabad</p>
@@ -86,7 +81,7 @@ export function Hero({ started }: { started: boolean }) {
             <h2 className="stage-h">Three towers. <em>150+ apartments.</em> Lit every night of the year.</h2>
           </div>
           <div className="hero-stage" data-i="3">
-            <p className="label">The resort, by daylight</p>
+            <p className="label">Open all year</p>
             <h2 className="stage-h">Snow outside. <em>Warmth inside.</em></h2>
             <div className="hero-cta">
               <a className="btn" href="#ownership" onClick={(e) => { e.preventDefault(); scrollTo('#ownership') }}>See the payment plan</a>

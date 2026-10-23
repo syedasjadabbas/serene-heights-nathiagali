@@ -16,7 +16,7 @@ const PATH = new THREE.CatmullRomCurve3([
   new THREE.Vector3(-4, 11.5, 12.5),
   new THREE.Vector3(8, 10.5, 9.5),
 ])
-const LOOK_FROM = new THREE.Vector3(0, 4.6, 0)
+const LOOK_FROM = new THREE.Vector3(0, 8.2, 0) // aim high so the towers sit below the headline
 const LOOK_TO = new THREE.Vector3(-0.8, 8.4, -1.6)
 
 function CameraRig() {

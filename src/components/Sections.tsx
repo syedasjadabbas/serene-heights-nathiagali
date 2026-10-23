@@ -350,7 +350,7 @@ export function Enquire() {
           <div className="field"><label htmlFor="f-phone">Phone</label><input id="f-phone" name="phone" type="tel" autoComplete="tel" required /></div>
           <div className="field"><label htmlFor="f-email">Email</label><input id="f-email" name="email" type="email" autoComplete="email" /></div>
           <div className="field"><label htmlFor="f-city">City</label><input id="f-city" name="city" autoComplete="address-level2" /></div>
-          <div className="field"><label htmlFor="f-int">Interested in</label>
+          <div className="field full"><label htmlFor="f-int">Interested in</label>
             <select id="f-int" name="interest" value={interest} onChange={(e) => setInterest(e.target.value)}>
               <option>Hotel apartment · 1 bedroom</option>
               <option>Hotel apartment · 2 bedroom</option>
@@ -359,7 +359,7 @@ export function Enquire() {
               <option>Booking a stay</option>
             </select>
           </div>
-          <div className="field"><label htmlFor="f-unit">Apartment (optional)</label><input id="f-unit" name="unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. A-503" /></div>
+          <div className="field full"><label htmlFor="f-unit">Apartment (optional)</label><input id="f-unit" name="unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. A-503" /></div>
           <button className="btn" type="submit">Request a call back</button>
           {msg && <p className="form-msg" role="status">{msg}</p>}
         </form>
