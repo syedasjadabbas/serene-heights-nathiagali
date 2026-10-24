@@ -419,8 +419,10 @@ input[type='range'] { width: 100%; accent-color: var(--sage); }
 .cite { display: grid; gap: 4px; margin-top: 32px; }
 .cite span:first-child { font-family: var(--display); font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; }
 .updates { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.updates span { font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
-.updates span:first-child { border-color: var(--sage); color: var(--snow); }
+.updates a { font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); text-decoration: none; transition: border-color 0.3s, color 0.3s, background 0.3s; }
+.updates a:first-child { border-color: var(--sage); color: var(--snow); }
+.updates a:hover, .updates a:focus-visible { border-color: var(--sage); color: var(--pine); background: var(--sage); outline: none; }
+.timeline li.chosen .tl-date .h-sm { color: var(--sage); }
 @media (max-width: 820px) { .founder { grid-template-columns: 1fr; } }
 
 /* ---------- enquire ---------- */
@@ -485,7 +487,7 @@ footer .mark { justify-items: start; }
 .map-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .map-anchor { position: absolute; left: 0; top: 0; will-change: transform; opacity: 0; transition: opacity 0.8s; }
 .map-anchor.on { opacity: 1; }
-.map-anchor.dim { opacity: 0.25; }
+.map-anchor.on.dim { opacity: 0.25; }
 .map-label { position: absolute; left: 0; top: 0; transform: translate(-50%, -4px); display: grid; justify-items: center; gap: 3px; white-space: nowrap; text-align: center; }
 .map-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--snow); box-shadow: 0 0 0 3px rgba(247, 247, 242, 0.15); margin-bottom: 4px; }
 .map-name { font-family: var(--display); font-weight: 400; font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--snow); text-shadow: 0 1px 10px rgba(24, 51, 42, 0.95); }
@@ -649,7 +651,7 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
   .stage-h { font-size: clamp(40px, 11.5vw, 58px); }
   .map-card h2 { font-size: clamp(36px, 10.5vw, 52px); }
   .map-card p { font-size: 15px; }
-  .route .time, .size-box span, .amen-tabs button span, .perk-list > div span:first-child, .field label, .updates span { font-size: 12px; }
+  .route .time, .size-box span, .amen-tabs button span, .perk-list > div span:first-child, .field label, .updates a { font-size: 12px; }
   .gallery-idx small { font-size: 12px; }
   .btn.small { font-size: 12px; padding: 12px 18px; }
   .field input, .field select { padding: 12px 0; }
@@ -834,3 +836,11 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
 .is-full .turn { bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
 @media (max-width: 640px) { .is-full .sel-hint { bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + 56px); left: 12px; right: 12px; text-align: center; } }
 .plan3d-canvas:not(.is-full) .sel-hint { max-width: calc(100% - 96px); }
+
+/* map on phones: the route key gives way to the progress bar, which keeps clear of the WhatsApp button */
+@media (max-width: 760px) {
+  .map-legend { display: none; }
+  .map-foot { padding-right: 72px; }
+  .map-steps li i { height: 2px; }
+  .map-label.home .map-note { white-space: normal; max-width: 190px; line-height: 1.4; }
+}

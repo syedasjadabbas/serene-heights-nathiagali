@@ -277,15 +277,36 @@ function LabelProjector({ els }: { els: React.RefObject<(HTMLDivElement | null)[
   const { camera, size } = useThree()
   const anchors = useMemo(() => LABELLED.map((pl) => worldAt(pl.lat, pl.lon, pl.kind === 'home' ? 2.6 : 1.2)), [])
   const v = useMemo(() => new THREE.Vector3(), [])
+  const homeAt = useMemo(() => ({ x: 0, y: 0, on: false }), [])
   useFrame(() => {
     const p = mapState.shown
     const on = p > 0.1, arrived = p >= PHASE.arrive[0]
+    // phones: keep names inside the screen, out from under the header and the text card,
+    // and clear of Serene Heights once arrived
+    const narrow = size.width < 760
+    const top = 104, bottom = size.height * 0.58
     LABELLED.forEach((pl, i) => {
       const el = els.current?.[i]
       if (!el) return
       v.copy(anchors[i]).project(camera)
-      const hidden = v.z > 1 || Math.abs(v.x) > 1.2 || Math.abs(v.y) > 1.2
-      el.style.transform = `translate3d(${((v.x + 1) / 2) * size.width}px, ${((1 - v.y) / 2) * size.height}px, 0)`
+      let hidden = v.z > 1 || Math.abs(v.x) > 1.2 || Math.abs(v.y) > 1.2
+      let x = ((v.x + 1) / 2) * size.width, y = ((1 - v.y) / 2) * size.height
+      if (narrow) {
+        const half = pl.kind === 'home' ? 110 : 64
+        x = Math.min(size.width - half, Math.max(half, x))
+        if (pl.kind === 'home') {
+          // shown once it is really in view; at arrival held inside the open part of the screen
+          if (arrived) y = Math.min(bottom, Math.max(top + 20, y))
+          else hidden ||= y < top || y > bottom
+          homeAt.x = x
+          homeAt.y = y
+          homeAt.on = !hidden
+        } else {
+          hidden ||= y < top || y > bottom
+          if (homeAt.on && Math.abs(x - homeAt.x) < 150 && Math.abs(y - homeAt.y) < 70) hidden = true
+        }
+      }
+      el.style.transform = `translate3d(${x}px, ${y}px, 0)`
       el.classList.toggle('on', on && !hidden)
       el.classList.toggle('active', pl === SERENE && arrived)
       el.classList.toggle('dim', pl.kind === 'town' && arrived)

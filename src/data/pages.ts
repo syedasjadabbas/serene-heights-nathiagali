@@ -64,6 +64,9 @@ export const floorPlans = [
 
 // Site-visit videos on the client's YouTube channel, newest first, in the order the
 // current progress page lists them.
+/** Anchor for one site visit on the progress page, e.g. "update-april-2026". */
+export const updateId = (date: string) => `update-${date.toLowerCase().replace(/\s+/g, '-')}`
+
 export const progress = [
   { date: 'April 2026', video: 'lxc9yQty3BA' },
   { date: 'December 2025', video: 'HIewLGoRr2g' },

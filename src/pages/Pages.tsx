@@ -2,11 +2,11 @@ import { lazy, useEffect, useMemo, useRef, useState, type MouseEvent, type React
 import { ChapterHead, LazyCanvas, Split, Swoosh, srcSet, useReveal } from '../components/common'
 import { coarsePointer } from '../lib/device'
 import { Enquire } from '../components/Sections'
-import { Link, navigate } from '../lib/router'
-import { ScrollTrigger, lockScroll } from '../lib/scroll'
+import { Link, navigate, takePendingHash } from '../lib/router'
+import { ScrollTrigger, jumpTo, lockScroll } from '../lib/scroll'
 import { trackContact } from '../lib/analytics'
 import { contact, figures, route } from '../data/site'
-import { about, blogPosts, floorPlans, mapsLink, offices, privacy, progress, smartUnitPage } from '../data/pages'
+import { about, blogPosts, floorPlans, mapsLink, offices, privacy, progress, smartUnitPage, updateId } from '../data/pages'
 
 /* ---------- shared page header ---------- */
 function PageHeader({ kicker, title, em, intro, image, className = '', children }: { kicker: string; title: string; em?: string; intro?: string; image?: string; className?: string; children?: ReactNode }) {
@@ -286,8 +286,8 @@ export function FloorPlansPage() {
 }
 
 /* ---------- Construction progress ---------- */
-function LiteVideo({ id, title }: { id: string; title: string }) {
-  const [play, setPlay] = useState(false)
+function LiteVideo({ id, title, autoplay = false }: { id: string; title: string; autoplay?: boolean }) {
+  const [play, setPlay] = useState(autoplay)
   return play ? (
     <iframe className="video" src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`} title={title}
       allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
@@ -300,6 +300,18 @@ function LiteVideo({ id, title }: { id: string; title: string }) {
 }
 
 export function ProgressPage() {
+  // arriving from a date on the home page: scroll to that visit and start its film
+  const [chosen] = useState(() => takePendingHash())
+  useEffect(() => {
+    if (!chosen) return
+    // jump, then check again once images and the video frame have settled the layout
+    const land = () => {
+      const el = document.getElementById(chosen)
+      if (el) jumpTo(el.getBoundingClientRect().top + window.scrollY - 110)
+    }
+    const timers = [200, 700, 1400].map((ms) => window.setTimeout(land, ms))
+    return () => timers.forEach(clearTimeout)
+  }, [chosen])
   return (
     <>
       <PageHeader kicker="Construction progress" title="Built in the open, visit by visit." em="visit by visit." intro="Site-visit films from the construction of Serene Heights, newest first. Book a visit to see the towers in person." />
@@ -307,9 +319,9 @@ export function ProgressPage() {
         <div className="wrap">
           <ol className="timeline">
             {progress.map((p, i) => (
-              <li key={p.video}>
+              <li key={p.video} id={updateId(p.date)} className={updateId(p.date) === chosen ? 'chosen' : undefined}>
                 <div className="tl-date"><span className="label">{i === 0 ? 'Latest' : 'Update'}</span><h2 className="h-sm">{p.date}</h2></div>
-                <LiteVideo id={p.video} title={`Serene Heights construction progress, ${p.date}`} />
+                <LiteVideo id={p.video} title={`Serene Heights construction progress, ${p.date}`} autoplay={updateId(p.date) === chosen} />
               </li>
             ))}
           </ol>

@@ -4,7 +4,7 @@ import { gsap, reducedMotion, scrollTo } from '../lib/scroll'
 import { Link } from '../lib/router'
 import { trackContact, trackLead } from '../lib/analytics'
 import { CookieSettingsLink } from './Chrome'
-import { progress } from '../data/pages'
+import { progress, updateId } from '../data/pages'
 import { amenityGroups, contact, figures, ownerBenefits, pricing, residences, route, seasons, smartUnit } from '../data/site'
 
 const SeasonScene = lazy(() => import('../three/SeasonScene').then((m) => ({ default: m.SeasonScene })))
@@ -306,7 +306,7 @@ export function Founder() {
       <div className="wrap founder" ref={ref}>
         <div data-reveal>
           <span className="label">Construction updates</span>
-          <div className="updates">{progress.slice(0, 6).map((u) => <span key={u.date}>{u.date}</span>)}</div>
+          <div className="updates">{progress.slice(0, 6).map((u) => <Link key={u.date} to={`/progress#${updateId(u.date)}`} aria-label={`Watch the ${u.date} site visit`}>{u.date}</Link>)}</div>
           <Link className="btn ghost small founder-link" to="/progress">Watch the site visits</Link>
         </div>
         <div>
