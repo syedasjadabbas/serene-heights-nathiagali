@@ -42,7 +42,7 @@ function MapSection3D() {
     if (!el) return
     // On the way down, scrolling waits at the end of the map until the drive has
     // arrived, then holds on Serene Heights for HOLD_SECONDS before releasing.
-    const HOLD_AT = 0.975, HOLD_SECONDS = 1.5
+    const HOLD_AT = 0.975, HOLD_SECONDS = 1
     const hold = { armed: true, active: false }
     let watcher: (() => void) | null = null
     let release: gsap.core.Tween | null = null
