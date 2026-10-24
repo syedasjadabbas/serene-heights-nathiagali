@@ -867,3 +867,8 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
   .blog-filter button, .plan3d-tabs button { flex: none; white-space: nowrap; min-height: 44px; display: inline-flex; align-items: center; }
 }
 @media (max-width: 760px) { .map-label.home .map-note { font-size: 11px; } }
+
+/* hero: "The road climbs…" sits on the right on wider screens, clear of the towers */
+@media (min-width: 761px) {
+  .hero-stage[data-i='1'] { justify-self: end; justify-items: end; text-align: right; }
+}
