@@ -72,7 +72,11 @@ export function Hero({ started }: { started: boolean }) {
                 <span className="line"><span>Pakistan’s first</span></span>
                 <span className="line"><span className="em">winter resort</span></span>
               </h1>
-              <p className="hero-tag fade">7,906 ft above the sea, the place where winter becomes a stay.</p>
+              <p className="hero-tag fade">7,906 ft above the sea,<br /> where winter becomes a stay.</p>
+            </div>
+            <div className="hero-cta hero-first-cta fade">
+              <a className="btn small" href="#residences" onClick={(e) => { e.preventDefault(); scrollTo('#residences') }}>Explore residences</a>
+              <a className="btn ghost small" href="#enquire" onClick={(e) => { e.preventDefault(); scrollTo('#enquire') }}>Book a site visit</a>
             </div>
           </div>
           <div className="hero-stage" data-i="1">
