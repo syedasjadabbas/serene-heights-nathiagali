@@ -70,7 +70,7 @@ export function Hero({ started }: { started: boolean }) {
               <p className="hero-kicker fade"><span aria-hidden="true" />Nathia Gali · Galiyat</p>
               <h1 className="hero-title" aria-label="Pakistan’s first winter resort">
                 <span className="line"><span>Pakistan’s first</span></span>
-                <span className="line"><span className="em">winter resort</span></span>
+                <span className="line"><span className="em">Winter resort</span></span>
               </h1>
               <p className="hero-tag fade">7,906 ft above the sea,<br /> where winter becomes a stay.</p>
             </div>
