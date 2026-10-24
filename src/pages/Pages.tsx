@@ -133,6 +133,27 @@ function Plans3D() {
   const zoom = useRef(1)
   const plan = floorPlans[i]
   const name = plan.file.replace(/\.png$/, '')
+  // touch: swipe sideways to turn, pinch to zoom (an up-down swipe still scrolls the page)
+  const gesture = useRef<{ x: number; d: number } | null>(null)
+  const zoomTo = (z: number) => { zoom.current = Math.min(1.3, Math.max(0.45, z)) }
+  const pinch = (t: React.TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
+  const onTouchStart = (e: React.TouchEvent) => {
+    gesture.current = e.touches.length >= 2 ? { x: 0, d: pinch(e.touches) } : { x: e.touches[0].clientX, d: 0 }
+  }
+  const onTouchMove = (e: React.TouchEvent) => {
+    const g = gesture.current
+    if (!g) return
+    if (e.touches.length >= 2) {
+      const d = pinch(e.touches)
+      if (g.d) zoomTo(zoom.current * (g.d / d))
+      g.d = d
+    } else {
+      const x = e.touches[0].clientX
+      spin.current -= (x - g.x) * 0.012
+      g.x = x
+    }
+  }
+  const onTouchEnd = (e: React.TouchEvent) => { gesture.current = e.touches.length ? { x: e.touches[0].clientX, d: 0 } : null }
   return (
     <section className="band tone-dusk plan3d-band">
       <div className="wrap">
@@ -144,17 +165,17 @@ function Plans3D() {
             </button>
           ))}
         </div>
-        <div className="sel-canvas plan3d-canvas">
+        <div className="sel-canvas plan3d-canvas" {...(coarsePointer ? { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: onTouchEnd } : {})}>
           <LazyCanvas scene={PlanScene} sceneProps={{ name, spin, zoom }} warmup="600px"
             canvas={{ dpr: [1, 1.75], shadows: true, camera: { fov: 35, position: [3.9, 8.4, 9.2] }, gl: { antialias: true } }}
             fallback={<img className="scene-fallback plan3d-fallback" src={plan.thumb} alt={`${plan.title} plan`} />} />
-          <span className="label sel-hint">{coarsePointer ? 'Turn and zoom with the buttons' : 'Drag to turn · scroll to zoom'}</span>
+          <span className="label sel-hint">{coarsePointer ? 'Swipe to turn · pinch to zoom' : 'Drag to turn · scroll to zoom'}</span>
           {coarsePointer && (
             <div className="turn">
               <button type="button" aria-label="Turn the floor left" onClick={() => { spin.current -= Math.PI / 4 }}>←</button>
               <button type="button" aria-label="Turn the floor right" onClick={() => { spin.current += Math.PI / 4 }}>→</button>
-              <button type="button" aria-label="Zoom in" onClick={() => { zoom.current = Math.max(0.45, zoom.current * 0.75) }}>+</button>
-              <button type="button" aria-label="Zoom out" onClick={() => { zoom.current = Math.min(1.3, zoom.current / 0.75) }}>−</button>
+              <button type="button" aria-label="Zoom in" onClick={() => zoomTo(zoom.current * 0.75)}>+</button>
+              <button type="button" aria-label="Zoom out" onClick={() => zoomTo(zoom.current / 0.75)}>−</button>
             </div>
           )}
         </div>

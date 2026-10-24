@@ -165,14 +165,15 @@ function Rig({ spin, zoom }: { spin: React.RefObject<number>; zoom: React.RefObj
   const s = useMemo(() => ({ az: 0.35, r: 15 }), [])
   useFrame((state, dt) => {
     if (!coarsePointer) return
-    // touch: slow sway, turned by the arrow buttons and zoomed by the +/- buttons
+    // touch: slow sway, turned by swipes or the arrows, zoomed by pinching or +/-
     const ease = 1 - Math.exp(-dt * 4)
     const want = spin.current + Math.sin(state.clock.elapsedTime * 0.25) * 0.25
     s.az += (want - s.az) * ease
-    const fit = (SIZE * 0.62) / Math.tan(THREE.MathUtils.degToRad(35) / 2 * Math.min(1, size.width / size.height))
+    // close enough that the floor fills a narrow screen
+    const fit = (SIZE * 0.54) / Math.tan(THREE.MathUtils.degToRad(35) / 2 * Math.min(1, size.width / size.height))
     const r = (Number.isFinite(fit) ? fit : 15) * zoom.current
     s.r += (r - s.r) * ease
-    const pol = 0.85
+    const pol = 0.72 // a little more from above, so the layout reads on a small screen
     camera.position.set(s.r * Math.sin(pol) * Math.sin(s.az), s.r * Math.cos(pol), s.r * Math.sin(pol) * Math.cos(s.az))
     camera.lookAt(0, 0, 0)
   })
