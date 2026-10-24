@@ -187,7 +187,7 @@ export function Amenities() {
             </div>
           </div>
           <div className="amen-panel" role="tabpanel" id="amen-panel" aria-labelledby={'tab-' + i} data-reveal>
-            <div className="pic arch-wide" ref={pic}><img key={g.img} src={g.img} srcSet={srcSet(g.img)} sizes="(max-width: 820px) 100vw, 55vw" alt={g.name} /></div>
+            <div className="pic arch-wide" ref={pic}><img key={g.img} src={g.img} srcSet={srcSet(g.img)} sizes="(max-width: 820px) 100vw, 55vw" alt={g.name} loading="lazy" /></div>
             <ul key={g.name}>
               {g.items.map(([t, d]) => <li key={t}><b>{t}</b><small>{d}</small></li>)}
             </ul>

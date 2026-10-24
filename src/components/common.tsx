@@ -67,9 +67,11 @@ export function LazyCanvas<P extends object>({ scene, sceneProps, canvas = {}, f
 
 /** 960 px version of a /media photo, for phones and small frames. */
 export const smallSrc = (src: string) => src.replace(/\.webp$/, '-960.webp')
-/** srcSet so phones download the 960 px photo and larger screens the 1800 px one. */
-export const srcSet = (src: string) => `${smallSrc(src)} 960w, ${src} 1800w`
 export const narrowScreen = typeof window !== 'undefined' && window.innerWidth < 760
+/** srcSet so phones download the 960 px photo and larger screens the 1800 px one. Phones get only
+ *  the 960 px file: at 3x pixel density the browser would otherwise pick the large one for full-width
+ *  photos, though 960 px is already sharp on a phone-width screen. */
+export const srcSet = (src: string) => (narrowScreen ? `${smallSrc(src)} 960w` : `${smallSrc(src)} 960w, ${src} 1800w`)
 
 /** Full-bleed photo used where a 3D scene can't run. */
 export function SceneFallback({ src, alt = '', position = '50% 40%' }: { src: string; alt?: string; position?: string }) {

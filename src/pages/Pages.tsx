@@ -48,7 +48,7 @@ export function AboutPage() {
             </div>
           </div>
           <figure className="statement-pic" data-reveal>
-            <div className="arch"><img src="/media/terraces.webp" srcSet={srcSet('/media/terraces.webp')} sizes="(max-width: 820px) 100vw, 40vw" alt="Balconies and rooftop glasshouse of Serene Heights" /></div>
+            <div className="arch"><img src="/media/terraces.webp" srcSet={srcSet('/media/terraces.webp')} sizes="(max-width: 820px) 100vw, 40vw" loading="lazy" alt="Balconies and rooftop glasshouse of Serene Heights" /></div>
             <Swoosh />
           </figure>
         </div>

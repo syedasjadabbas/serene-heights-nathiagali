@@ -285,14 +285,15 @@ function LabelProjector({ els }: { els: React.RefObject<(HTMLDivElement | null)[
     // and clear of Serene Heights once arrived
     const narrow = size.width < 760
     const top = 104, bottom = size.height * 0.58
-    LABELLED.forEach((pl, i) => {
+    // Serene Heights first, so the towns can keep clear of it in the same frame
+    LABELLED.map((pl, i) => [pl, i] as const).sort((x, y) => (x[0].kind === 'home' ? -1 : y[0].kind === 'home' ? 1 : 0)).forEach(([pl, i]) => {
       const el = els.current?.[i]
       if (!el) return
       v.copy(anchors[i]).project(camera)
       let hidden = v.z > 1 || Math.abs(v.x) > 1.2 || Math.abs(v.y) > 1.2
       let x = ((v.x + 1) / 2) * size.width, y = ((1 - v.y) / 2) * size.height
       if (narrow) {
-        const half = pl.kind === 'home' ? 110 : 64
+        const half = pl.kind === 'home' ? Math.min(140, size.width / 2 - 8) : 64 // the arrived label is the widest
         x = Math.min(size.width - half, Math.max(half, x))
         if (pl.kind === 'home') {
           // shown once it is really in view; at arrival held inside the open part of the screen
@@ -303,7 +304,7 @@ function LabelProjector({ els }: { els: React.RefObject<(HTMLDivElement | null)[
           homeAt.on = !hidden
         } else {
           hidden ||= y < top || y > bottom
-          if (homeAt.on && Math.abs(x - homeAt.x) < 150 && Math.abs(y - homeAt.y) < 70) hidden = true
+          if (homeAt.on && Math.abs(x - homeAt.x) < 175 && Math.abs(y - homeAt.y) < 90) hidden = true
         }
       }
       el.style.transform = `translate3d(${x}px, ${y}px, 0)`

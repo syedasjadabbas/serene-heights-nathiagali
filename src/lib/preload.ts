@@ -37,7 +37,12 @@ function warmImages() {
     // a few at a time, so the network stays free for anything the visitor does
     for (let n = 0; n < 4 && i < imgs.length; n++, i++) imgs[i].loading = 'eager'
     if (i < imgs.length) window.setTimeout(next, 150)
-    else textures.forEach((src) => { new Image().src = src })
+    else textures.forEach((src) => {
+      // the 3D scenes load these as cross-origin textures; ask the same way so the cached copy is reused
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.src = src
+    })
   }
   next()
 }
