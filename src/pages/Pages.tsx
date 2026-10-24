@@ -146,7 +146,7 @@ function Plans3D() {
         </div>
         <div className="sel-canvas plan3d-canvas">
           <LazyCanvas scene={PlanScene} sceneProps={{ name, spin, zoom }} warmup="600px"
-            canvas={{ dpr: [1, 1.75], camera: { fov: 35, position: [3.9, 8.4, 9.2] }, gl: { antialias: true } }}
+            canvas={{ dpr: [1, 1.75], shadows: true, camera: { fov: 35, position: [3.9, 8.4, 9.2] }, gl: { antialias: true } }}
             fallback={<img className="scene-fallback plan3d-fallback" src={plan.thumb} alt={`${plan.title} plan`} />} />
           <span className="label sel-hint">{coarsePointer ? 'Turn and zoom with the buttons' : 'Drag to turn · scroll to zoom'}</span>
           {coarsePointer && (

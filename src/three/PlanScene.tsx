@@ -4,16 +4,15 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { coarsePointer } from '../lib/device'
 
-// A floor plan raised into 3D: the drawing is the floor, its walls, balcony railings and
-// beds stand up from it. The boxes come from scripts/plan3d.py (public/data/plans3d).
+// A floor plan built as a furnished floor: oak, stone and decking floors, plastered walls,
+// glass balcony railings and made beds, lit by a low sun that casts real shadows.
+// Walls, railings, beds and the floor texture come from scripts/plan3d.py (public/data/plans3d).
 
-type PlanData = { w: number; h: number; boxes: [number, number, number, number, number][] }
+type Box = [number, number, number, number, number]
+type PlanData = { w: number; h: number; boxes: Box[]; beds: Box[] }
 const SIZE = 12 // world width of the longer side of a plan
-const KINDS = [
-  { height: 0.46, color: '#eef1ec' }, // walls and cores: snow, capped in pine
-  { height: 0.16, color: '#37584f' }, // balcony railings: pine
-  { height: 0.1, color: '#a9c7b8' }, // beds: sage
-]
+const WALL_H = 0.5
+const RAIL_H = 0.2
 
 const cache = new Map<string, Promise<{ data: PlanData; tex: THREE.Texture }>>()
 function loadPlan(name: string) {
@@ -34,61 +33,128 @@ function loadPlan(name: string) {
 
 const unitBox = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0)
 
-const CAP = 0.03 // pine top on each wall, so the layout reads from above
-
-function Walls({ data, kind, scale, cap = false }: { data: PlanData; kind: number; scale: number; cap?: boolean }) {
+/** One instanced mesh of boxes: `parts` gives each box's world matrix. */
+function Instanced({ parts, material, shadows = true }: { parts: THREE.Matrix4[]; material: THREE.Material; shadows?: boolean }) {
   const mesh = useMemo(() => {
-    const list = data.boxes.filter((b) => b[4] === kind)
-    const color = cap ? '#18332a' : KINDS[kind].color
-    const m = new THREE.InstancedMesh(unitBox, new THREE.MeshStandardMaterial({ color, roughness: 0.85 }), Math.max(1, list.length))
-    const o = new THREE.Object3D()
-    list.forEach(([x, y, w, h], i) => {
-      o.position.set((x + w / 2) * scale - (data.w * scale) / 2, cap ? KINDS[kind].height : 0, (y + h / 2) * scale - (data.h * scale) / 2)
-      o.scale.set(Math.max(w * scale, 0.02), cap ? CAP : KINDS[kind].height, Math.max(h * scale, 0.02))
-      o.updateMatrix()
-      m.setMatrixAt(i, o.matrix)
-    })
-    m.count = list.length
+    const m = new THREE.InstancedMesh(unitBox, material, Math.max(1, parts.length))
+    parts.forEach((mx, i) => m.setMatrixAt(i, mx))
+    m.count = parts.length
+    m.castShadow = shadows
+    m.receiveShadow = true
     return m
-  }, [data, kind, scale, cap])
-  useEffect(() => () => { (mesh.material as THREE.Material).dispose(); mesh.dispose() }, [mesh])
+  }, [parts, material, shadows])
+  useEffect(() => () => mesh.dispose(), [mesh])
   return <primitive object={mesh} />
+}
+
+const o = new THREE.Object3D()
+const boxMatrix = (x: number, y: number, z: number, sx: number, sy: number, sz: number) => {
+  o.position.set(x, y, z)
+  o.rotation.set(0, 0, 0)
+  o.scale.set(sx, sy, sz)
+  o.updateMatrix()
+  return o.matrix.clone()
+}
+
+function useMaterials() {
+  const m = useMemo(() => ({
+    plaster: new THREE.MeshStandardMaterial({ color: '#f3f0ea', roughness: 0.92 }),
+    wallTop: new THREE.MeshStandardMaterial({ color: '#56635d', roughness: 0.8 }),
+    glass: new THREE.MeshStandardMaterial({ color: '#cfe5dc', roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.38, depthWrite: false }),
+    handrail: new THREE.MeshStandardMaterial({ color: '#18332a', roughness: 0.4, metalness: 0.5 }),
+    walnut: new THREE.MeshStandardMaterial({ color: '#5a3d2b', roughness: 0.6 }),
+    linen: new THREE.MeshStandardMaterial({ color: '#f6f4ef', roughness: 0.95 }),
+    duvet: new THREE.MeshStandardMaterial({ color: '#9fc2b1', roughness: 0.95 }),
+  }), [])
+  useEffect(() => () => Object.values(m).forEach((x) => x.dispose()), [m])
+  return m
+}
+
+/** Matrices for every part of every bed: frame, mattress, duvet, two pillows, headboard. */
+function bedParts(beds: Box[], toWorld: (x: number, y: number) => [number, number], s: number) {
+  const parts = { walnut: [] as THREE.Matrix4[], linen: [] as THREE.Matrix4[], duvet: [] as THREE.Matrix4[] }
+  const bed = new THREE.Matrix4()
+  const local = new THREE.Matrix4()
+  const add = (list: THREE.Matrix4[], x: number, y: number, z: number, sx: number, sy: number, sz: number) => {
+    local.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(sx, sy, sz))
+    list.push(bed.clone().multiply(local))
+  }
+  for (const [x, y, w, h, head] of beds) {
+    const [cx, cz] = toWorld(x + w / 2, y + h / 2)
+    const L = Math.max(w, h) * s, W = Math.min(w, h) * s
+    // the bed's own frame has its head toward -z; turn it so the head meets the wall
+    const angle = [0, -Math.PI / 2, Math.PI, Math.PI / 2][head]
+    bed.compose(new THREE.Vector3(cx, 0, cz), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), angle), new THREE.Vector3(1, 1, 1))
+    add(parts.walnut, 0, 0, 0, W, 0.05, L)                               // frame
+    add(parts.linen, 0, 0.05, 0.01 * L, W * 0.94, 0.05, L * 0.95)        // mattress
+    add(parts.duvet, 0, 0.1, 0.19 * L, W * 0.99, 0.022, L * 0.62)        // duvet folded at the foot
+    add(parts.linen, -W * 0.23, 0.1, -0.36 * L, W * 0.4, 0.035, L * 0.14) // pillows
+    add(parts.linen, W * 0.23, 0.1, -0.36 * L, W * 0.4, 0.035, L * 0.14)
+    add(parts.walnut, 0, 0, -L / 2 - 0.015, W * 1.04, 0.2, 0.03)         // headboard
+  }
+  return parts
 }
 
 function Plan({ name, onReady }: { name: string; onReady: () => void }) {
   const [plan, setPlan] = useState<{ data: PlanData; tex: THREE.Texture } | null>(null)
   const rise = useRef<THREE.Group>(null)
   const grow = useRef(0)
+  const mat = useMaterials()
   useEffect(() => {
     let live = true
     loadPlan(name).then((p) => { if (live) { grow.current = 0; setPlan(p); onReady() } }).catch(() => {})
     return () => { live = false }
   }, [name, onReady])
-  // walls rise out of the drawing each time a floor is shown
+  // walls and furniture rise out of the floor each time a floor is shown
   useFrame((_, dt) => {
     if (!rise.current) return
     grow.current = Math.min(1, grow.current + dt / 1.1)
     const t = 1 - Math.pow(1 - grow.current, 3)
     rise.current.scale.y = Math.max(0.001, t)
   })
-  if (!plan) return null
-  const { data, tex } = plan
-  const scale = SIZE / Math.max(data.w, data.h * 1.3) // deep plans are seen foreshortened, so give them room
-  const W = data.w * scale, H = data.h * scale
+
+  const built = useMemo(() => {
+    if (!plan) return null
+    const { data } = plan
+    const s = SIZE / Math.max(data.w, data.h * 1.3) // deep plans are seen foreshortened, so give them room
+    const W = data.w * s, H = data.h * s
+    const toWorld = (gx: number, gy: number): [number, number] => [gx * s - W / 2, gy * s - H / 2]
+    const walls: THREE.Matrix4[] = [], tops: THREE.Matrix4[] = [], glass: THREE.Matrix4[] = [], rails: THREE.Matrix4[] = []
+    for (const [x, y, w, h, kind] of data.boxes) {
+      const [cx, cz] = toWorld(x + w / 2, y + h / 2)
+      const sx = Math.max(w * s, 0.02), sz = Math.max(h * s, 0.02)
+      if (kind === 0) {
+        walls.push(boxMatrix(cx, 0, cz, sx, WALL_H, sz))
+        tops.push(boxMatrix(cx, WALL_H, cz, sx, 0.012, sz))
+      } else {
+        glass.push(boxMatrix(cx, 0, cz, Math.max(sx * 0.5, 0.012), RAIL_H, Math.max(sz * 0.5, 0.012)))
+        rails.push(boxMatrix(cx, RAIL_H, cz, sx, 0.016, sz))
+      }
+    }
+    return { W, H, walls, tops, glass, rails, beds: bedParts(data.beds ?? [], toWorld, s) }
+  }, [plan])
+
+  if (!plan || !built) return null
+  const { W, H } = built
   return (
     <group>
-      {/* the drawing as the floor, and its dark silhouette below as the slab edge */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} receiveShadow>
         <planeGeometry args={[W, H]} />
-        <meshStandardMaterial map={tex} transparent alphaTest={0.5} roughness={1} />
+        <meshStandardMaterial map={plan.tex} transparent alphaTest={0.5} roughness={0.75} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.14, 0]} scale={1.01}>
+      {/* the slab's dark edge below the floor */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.16, 0]} scale={1.01}>
         <planeGeometry args={[W, H]} />
-        <meshBasicMaterial map={tex} color="#0c1c16" transparent alphaTest={0.5} />
+        <meshBasicMaterial map={plan.tex} color="#0c1c16" transparent alphaTest={0.5} />
       </mesh>
       <group ref={rise}>
-        {KINDS.map((_, k) => <Walls key={k} data={data} kind={k} scale={scale} />)}
-        <Walls data={data} kind={0} scale={scale} cap />
+        <Instanced parts={built.walls} material={mat.plaster} />
+        <Instanced parts={built.tops} material={mat.wallTop} shadows={false} />
+        <Instanced parts={built.glass} material={mat.glass} shadows={false} />
+        <Instanced parts={built.rails} material={mat.handrail} />
+        <Instanced parts={built.beds.walnut} material={mat.walnut} />
+        <Instanced parts={built.beds.linen} material={mat.linen} />
+        <Instanced parts={built.beds.duvet} material={mat.duvet} />
       </group>
     </group>
   )
@@ -120,13 +186,17 @@ function Rig({ spin, zoom }: { spin: React.RefObject<number>; zoom: React.RefObj
 export function PlanScene({ name, spin, zoom }: { name: string; spin: React.RefObject<number>; zoom: React.RefObject<number> }) {
   const invalidate = useThree((s) => s.invalidate)
   const onReady = useMemo(() => () => invalidate(), [invalidate])
+  const map = coarsePointer ? 1024 : 2048
   return (
     <>
       <color attach="background" args={['#18332a']} />
       <fog attach="fog" args={['#18332a', 26, 48]} />
-      <hemisphereLight args={['#f4f8f5', '#18332a', 1.1]} />
-      <directionalLight position={[-6, 12, 8]} intensity={1.9} color="#ffffff" />
-      <directionalLight position={[8, 6, -6]} intensity={0.5} color="#a9c7b8" />
+      <hemisphereLight args={['#f6f3ec', '#2a3d35', 0.85]} />
+      {/* a low, warm sun: walls and beds throw soft shadows across the floor */}
+      <directionalLight position={[-7, 11, 6]} intensity={2.4} color="#fff3e2" castShadow
+        shadow-mapSize={[map, map]} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-radius={4}
+        shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={40} />
+      <directionalLight position={[8, 6, -6]} intensity={0.45} color="#cfe5dc" />
       <Rig spin={spin} zoom={zoom} />
       <Plan name={name} onReady={onReady} />
     </>
