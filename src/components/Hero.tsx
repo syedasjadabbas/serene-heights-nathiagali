@@ -66,12 +66,14 @@ export function Hero({ started }: { started: boolean }) {
 
         <div className="wrap hero-stages">
           <div className="hero-stage" data-i="0">
-            <h1 className="hero-title" aria-label="Pakistan’s first winter resort">
-              <span className="line l1"><span>Pakistan’s</span></span>
-              <span className="line l2"><span>first</span></span>
-              <span className="line l3"><span>Winter</span><span className="em">Resort</span></span>
-            </h1>
-            <p className="hero-tag caps fade">7,906 ft above the sea.<br />The place where winter becomes a stay.</p>
+            <div className="hero-copy">
+              <p className="hero-kicker fade"><span aria-hidden="true" />Nathia Gali · Galiyat</p>
+              <h1 className="hero-title" aria-label="Pakistan’s first winter resort">
+                <span className="line"><span>Pakistan’s first</span></span>
+                <span className="line"><span className="em">winter resort</span></span>
+              </h1>
+              <p className="hero-tag fade">7,906 ft above the sea, the place where winter becomes a stay.</p>
+            </div>
           </div>
           <div className="hero-stage" data-i="1">
             <p className="label">Two hours from Islamabad</p>

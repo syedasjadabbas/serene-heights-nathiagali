@@ -8,7 +8,7 @@ import { fogGLSL } from './shaders'
 import { mapState } from './state'
 
 // mapState.shown follows the scroll at a capped pace so the whole drive takes at least DRIVE_SECONDS.
-const DRIVE_SECONDS = 8
+const DRIVE_SECONDS = 6
 
 function Pacer() {
   useFrame((_, dt) => {
