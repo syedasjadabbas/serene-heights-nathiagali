@@ -808,7 +808,7 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
 /* ---------- floor plans in 3D ---------- */
 .plan3d-band .wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
 .plan3d-tabs { max-width: 100%; }
-.plan3d-canvas { min-height: 600px; }
+.plan3d-canvas { min-height: 680px; }
 .plan3d-fallback { object-fit: contain; background: #fff; }
 .plan3d-canvas .sel-hint { top: 14px; bottom: auto; } /* the turn and zoom buttons sit along the bottom */
 @media (max-width: 980px) { .plan3d-canvas { min-height: 460px; } }
