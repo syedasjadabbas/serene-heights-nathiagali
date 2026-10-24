@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { coarsePointer } from '../lib/device'
 
@@ -160,31 +161,50 @@ function Plan({ name, onReady }: { name: string; onReady: () => void }) {
   )
 }
 
-function Rig({ spin, zoom }: { spin: React.RefObject<number>; zoom: React.RefObject<number> }) {
+type Refs = { spin: React.RefObject<number>; zoom: React.RefObject<number>; tilt: React.RefObject<number>; full: boolean }
+
+function Rig({ spin, zoom, tilt, full }: Refs) {
   const { camera, size } = useThree()
-  const s = useMemo(() => ({ az: 0.35, r: 15 }), [])
+  const controls = useRef<OrbitControlsImpl>(null)
+  const s = useMemo(() => ({ az: 0.35, r: 15, pol: 0.72, spin: spin.current, zoom: zoom.current }), [spin, zoom])
+  const v = useMemo(() => new THREE.Vector3(), [])
   useFrame((state, dt) => {
-    if (!coarsePointer) return
-    // touch: slow sway, turned by swipes or the arrows, zoomed by pinching or +/-
     const ease = 1 - Math.exp(-dt * 4)
-    const want = spin.current + Math.sin(state.clock.elapsedTime * 0.25) * 0.25
+    const c = controls.current
+    if (c) {
+      // desktop: the turn and zoom buttons nudge the orbit
+      if (spin.current !== s.spin || zoom.current !== s.zoom) {
+        v.copy(camera.position).sub(c.target)
+        v.applyAxisAngle(new THREE.Vector3(0, 1, 0), spin.current - s.spin)
+        v.multiplyScalar(zoom.current / s.zoom)
+        v.setLength(THREE.MathUtils.clamp(v.length(), c.minDistance, c.maxDistance))
+        camera.position.copy(c.target).add(v)
+        s.spin = spin.current
+        s.zoom = zoom.current
+      }
+      c.autoRotate = !full
+      c.update()
+      return
+    }
+    // touch: slow sway (not in full screen), turned by drags or the arrows, zoomed by pinching or +/-
+    const want = spin.current + (full ? 0 : Math.sin(state.clock.elapsedTime * 0.25) * 0.25)
     s.az += (want - s.az) * ease
+    s.pol += (tilt.current - s.pol) * ease
     // close enough that the floor fills a narrow screen
     const fit = (SIZE * 0.54) / Math.tan(THREE.MathUtils.degToRad(35) / 2 * Math.min(1, size.width / size.height))
     const r = (Number.isFinite(fit) ? fit : 15) * zoom.current
     s.r += (r - s.r) * ease
-    const pol = 0.72 // a little more from above, so the layout reads on a small screen
-    camera.position.set(s.r * Math.sin(pol) * Math.sin(s.az), s.r * Math.cos(pol), s.r * Math.sin(pol) * Math.cos(s.az))
+    camera.position.set(s.r * Math.sin(s.pol) * Math.sin(s.az), s.r * Math.cos(s.pol), s.r * Math.sin(s.pol) * Math.cos(s.az))
     camera.lookAt(0, 0, 0)
   })
   if (coarsePointer) return null
   return (
-    <OrbitControls makeDefault enablePan={false} enableDamping dampingFactor={0.08} minDistance={5} maxDistance={24}
-      minPolarAngle={0.2} maxPolarAngle={1.35} autoRotate autoRotateSpeed={0.35} />
+    <OrbitControls ref={controls} makeDefault enablePan={full} screenSpacePanning enableDamping dampingFactor={0.08} minDistance={3} maxDistance={26}
+      minPolarAngle={0.15} maxPolarAngle={1.4} autoRotateSpeed={0.35} zoomSpeed={0.9} />
   )
 }
 
-export function PlanScene({ name, spin, zoom }: { name: string; spin: React.RefObject<number>; zoom: React.RefObject<number> }) {
+export function PlanScene({ name, ...refs }: { name: string } & Refs) {
   const invalidate = useThree((s) => s.invalidate)
   const onReady = useMemo(() => () => invalidate(), [invalidate])
   const map = coarsePointer ? 1024 : 2048
@@ -198,7 +218,7 @@ export function PlanScene({ name, spin, zoom }: { name: string; spin: React.RefO
         shadow-mapSize={[map, map]} shadow-bias={-0.0004} shadow-normalBias={0.02} shadow-radius={4}
         shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={40} />
       <directionalLight position={[8, 6, -6]} intensity={0.45} color="#cfe5dc" />
-      <Rig spin={spin} zoom={zoom} />
+      <Rig {...refs} />
       <Plan name={name} onReady={onReady} />
     </>
   )

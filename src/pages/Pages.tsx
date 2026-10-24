@@ -3,7 +3,7 @@ import { ChapterHead, LazyCanvas, Split, Swoosh, srcSet, useReveal } from '../co
 import { coarsePointer } from '../lib/device'
 import { Enquire } from '../components/Sections'
 import { Link, navigate } from '../lib/router'
-import { ScrollTrigger } from '../lib/scroll'
+import { ScrollTrigger, lockScroll } from '../lib/scroll'
 import { trackContact } from '../lib/analytics'
 import { contact, figures, route } from '../data/site'
 import { about, blogPosts, floorPlans, mapsLink, offices, privacy, progress, smartUnitPage } from '../data/pages'
@@ -129,16 +129,37 @@ const PlanScene = lazy(() => import('../three/PlanScene').then((m) => ({ default
 // Each plan raised into 3D: walls, cores, balcony railings and beds stand up from the drawing.
 function Plans3D() {
   const [i, setI] = useState(3)
+  const [full, setFull] = useState(false)
   const spin = useRef(0.35)
   const zoom = useRef(1)
+  const tilt = useRef(0.72)
   const plan = floorPlans[i]
   const name = plan.file.replace(/\.png$/, '')
-  // touch: swipe sideways to turn, pinch to zoom (an up-down swipe still scrolls the page)
-  const gesture = useRef<{ x: number; d: number } | null>(null)
-  const zoomTo = (z: number) => { zoom.current = Math.min(1.3, Math.max(0.45, z)) }
+  const zoomTo = (z: number) => { zoom.current = Math.min(1.6, Math.max(0.35, z)) }
+
+  // full screen: lock the page behind, close with Esc
+  useEffect(() => {
+    if (!full) return
+    lockScroll(true)
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFull(false) }
+    window.addEventListener('keydown', onKey)
+    return () => { lockScroll(false); window.removeEventListener('keydown', onKey) }
+  }, [full])
+  // keep the chosen floor's button in view in the full-screen strip (it scrolls on phones)
+  useEffect(() => {
+    if (!full) return
+    const strip = document.querySelector<HTMLElement>('.plan3d-top .plan3d-tabs')
+    const on = strip?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    if (strip && on) strip.scrollTo({ left: on.offsetLeft - (strip.clientWidth - on.offsetWidth) / 2, behavior: 'smooth' })
+  }, [full, i])
+
+  // touch: swipe sideways to turn, pinch to zoom; full screen also tilts with an up-down drag
+  // (on the page an up-down swipe still scrolls). A tap without dragging opens full screen.
+  const gesture = useRef<{ x: number; y: number; d: number; moved: number; t: number } | null>(null)
   const pinch = (t: React.TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
   const onTouchStart = (e: React.TouchEvent) => {
-    gesture.current = e.touches.length >= 2 ? { x: 0, d: pinch(e.touches) } : { x: e.touches[0].clientX, d: 0 }
+    const t = e.touches[0]
+    gesture.current = { x: t.clientX, y: t.clientY, d: e.touches.length >= 2 ? pinch(e.touches) : 0, moved: e.touches.length >= 2 ? 99 : 0, t: performance.now() }
   }
   const onTouchMove = (e: React.TouchEvent) => {
     const g = gesture.current
@@ -147,30 +168,65 @@ function Plans3D() {
       const d = pinch(e.touches)
       if (g.d) zoomTo(zoom.current * (g.d / d))
       g.d = d
-    } else {
-      const x = e.touches[0].clientX
-      spin.current -= (x - g.x) * 0.012
-      g.x = x
+      g.moved = 99
+      return
     }
+    const { clientX: x, clientY: y } = e.touches[0]
+    spin.current -= (x - g.x) * 0.012
+    if (full) tilt.current = Math.min(1.3, Math.max(0.25, tilt.current - (y - g.y) * 0.006))
+    g.moved += Math.abs(x - g.x) + Math.abs(y - g.y)
+    g.x = x
+    g.y = y
   }
-  const onTouchEnd = (e: React.TouchEvent) => { gesture.current = e.touches.length ? { x: e.touches[0].clientX, d: 0 } : null }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const g = gesture.current
+    if (g && !full && !e.touches.length && g.moved < 8 && performance.now() - g.t < 600 && !(e.target as HTMLElement).closest('button')) setFull(true)
+    gesture.current = e.touches.length ? { x: e.touches[0].clientX, y: e.touches[0].clientY, d: 0, moved: 99, t: 0 } : null
+  }
+  // mouse: a click without dragging opens full screen
+  const press = useRef<{ x: number; y: number } | null>(null)
+  const onPointerDown = (e: React.PointerEvent) => { if (e.pointerType === 'mouse') press.current = { x: e.clientX, y: e.clientY } }
+  const onPointerUp = (e: React.PointerEvent) => {
+    const p = press.current
+    press.current = null
+    if (!p || full || e.button !== 0 || (e.target as HTMLElement).closest('button')) return
+    if (Math.hypot(e.clientX - p.x, e.clientY - p.y) < 5) setFull(true)
+  }
+
+  const tabs = (
+    <div className="seg plan3d-tabs" role="group" aria-label="Choose a floor">
+      {floorPlans.map((p, k) => (
+        <button key={p.file} type="button" aria-pressed={k === i} onClick={() => setI(k)}>
+          {p.title.replace(' floor', '')}{p.note === 'Arrival and lobby' ? ' · lobby' : p.note === 'Layout' ? ' · layout' : ''}
+        </button>
+      ))}
+    </div>
+  )
+  const hint = full
+    ? coarsePointer ? 'Drag to turn and tilt · pinch to zoom' : 'Drag to turn · scroll to zoom · right-drag to move'
+    : coarsePointer ? 'Swipe to turn · pinch to zoom · tap for full screen' : 'Drag to turn · scroll to zoom · click for full screen'
   return (
     <section className="band tone-dusk plan3d-band">
       <div className="wrap">
         <ChapterHead left="Every floor in 3D" right={`${plan.title}${plan.note ? ` · ${plan.note}` : ''}`} />
-        <div className="seg plan3d-tabs" role="group" aria-label="Choose a floor">
-          {floorPlans.map((p, k) => (
-            <button key={p.file} type="button" aria-pressed={k === i} onClick={() => setI(k)}>
-              {p.title.replace(' floor', '')}{p.note === 'Arrival and lobby' ? ' · lobby' : p.note === 'Layout' ? ' · layout' : ''}
-            </button>
-          ))}
-        </div>
-        <div className="sel-canvas plan3d-canvas" {...(coarsePointer ? { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: onTouchEnd } : {})}>
-          <LazyCanvas scene={PlanScene} sceneProps={{ name, spin, zoom }} warmup="600px"
+        {tabs}
+        <div className={`sel-canvas plan3d-canvas${full ? ' is-full' : ''}`} role={full ? 'dialog' : undefined} aria-modal={full || undefined}
+          aria-label={full ? `${plan.title} in 3D, full screen` : undefined}
+          onPointerDown={onPointerDown} onPointerUp={onPointerUp}
+          {...(coarsePointer ? { onTouchStart, onTouchMove, onTouchEnd, onTouchCancel: onTouchEnd } : {})}>
+          <LazyCanvas scene={PlanScene} sceneProps={{ name, spin, zoom, tilt, full }} warmup="600px"
             canvas={{ dpr: [1, 1.75], shadows: true, camera: { fov: 35, position: [3.9, 8.4, 9.2] }, gl: { antialias: true } }}
             fallback={<img className="scene-fallback plan3d-fallback" src={plan.thumb} alt={`${plan.title} plan`} />} />
-          <span className="label sel-hint">{coarsePointer ? 'Swipe to turn · pinch to zoom' : 'Drag to turn · scroll to zoom'}</span>
-          {coarsePointer && (
+          {full ? (
+            <div className="plan3d-top">
+              {tabs}
+              <button type="button" className="plan3d-btn" aria-label="Close full screen" onClick={() => setFull(false)}>✕</button>
+            </div>
+          ) : (
+            <button type="button" className="plan3d-btn plan3d-expand" aria-label="Open full screen" onClick={() => setFull(true)}>⛶</button>
+          )}
+          <span className="label sel-hint">{hint}</span>
+          {(coarsePointer || full) && (
             <div className="turn">
               <button type="button" aria-label="Turn the floor left" onClick={() => { spin.current -= Math.PI / 4 }}>←</button>
               <button type="button" aria-label="Turn the floor right" onClick={() => { spin.current += Math.PI / 4 }}>→</button>
