@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react'
-import { ChapterHead, Split, Swoosh, srcSet, useReveal } from '../components/common'
+import { lazy, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import { ChapterHead, LazyCanvas, Split, Swoosh, srcSet, useReveal } from '../components/common'
+import { coarsePointer } from '../lib/device'
 import { Enquire } from '../components/Sections'
 import { Link, navigate } from '../lib/router'
 import { ScrollTrigger } from '../lib/scroll'
@@ -123,6 +124,46 @@ export function SmartUnitPage() {
 }
 
 /* ---------- Floor plans ---------- */
+const PlanScene = lazy(() => import('../three/PlanScene').then((m) => ({ default: m.PlanScene })))
+
+// Each plan raised into 3D: walls, cores, balcony railings and beds stand up from the drawing.
+function Plans3D() {
+  const [i, setI] = useState(3)
+  const spin = useRef(0.35)
+  const zoom = useRef(1)
+  const plan = floorPlans[i]
+  const name = plan.file.replace(/\.png$/, '')
+  return (
+    <section className="band tone-dusk plan3d-band">
+      <div className="wrap">
+        <ChapterHead left="Every floor in 3D" right={`${plan.title}${plan.note ? ` · ${plan.note}` : ''}`} />
+        <div className="seg plan3d-tabs" role="group" aria-label="Choose a floor">
+          {floorPlans.map((p, k) => (
+            <button key={p.file} type="button" aria-pressed={k === i} onClick={() => setI(k)}>
+              {p.title.replace(' floor', '')}{p.note === 'Arrival and lobby' ? ' · lobby' : p.note === 'Layout' ? ' · layout' : ''}
+            </button>
+          ))}
+        </div>
+        <div className="sel-canvas plan3d-canvas">
+          <LazyCanvas scene={PlanScene} sceneProps={{ name, spin, zoom }} warmup="600px"
+            canvas={{ dpr: [1, 1.75], camera: { fov: 35, position: [5, 10.5, 11.5] }, gl: { antialias: true } }}
+            fallback={<img className="scene-fallback plan3d-fallback" src={plan.thumb} alt={`${plan.title} plan`} />} />
+          <span className="label sel-hint">{coarsePointer ? 'Turn and zoom with the buttons' : 'Drag to turn · scroll to zoom'}</span>
+          {coarsePointer && (
+            <div className="turn">
+              <button type="button" aria-label="Turn the floor left" onClick={() => { spin.current -= Math.PI / 4 }}>←</button>
+              <button type="button" aria-label="Turn the floor right" onClick={() => { spin.current += Math.PI / 4 }}>→</button>
+              <button type="button" aria-label="Zoom in" onClick={() => { zoom.current = Math.max(0.45, zoom.current * 0.75) }}>+</button>
+              <button type="button" aria-label="Zoom out" onClick={() => { zoom.current = Math.min(1.3, zoom.current / 0.75) }}>−</button>
+            </div>
+          )}
+        </div>
+        <p className="fine plans-note">Raised from the architect’s drawings: walls, lift and stair cores, balconies and beds. Indicative only.</p>
+      </div>
+    </section>
+  )
+}
+
 export function FloorPlansPage() {
   const [open, setOpen] = useState<number | null>(null)
   const dialog = useRef<HTMLDialogElement>(null)
@@ -135,7 +176,8 @@ export function FloorPlansPage() {
   const plan = open !== null ? floorPlans[open] : null
   return (
     <>
-      <PageHeader kicker="Floor plans" title="Every floor, room by room." em="room by room." intro="Ground floor arrival and lobby, then the residential floors of the main tower. Select a plan to see it full screen." />
+      <PageHeader kicker="Floor plans" title="Every floor, room by room." em="room by room." intro="Ground floor arrival and lobby, then the residential floors of the main tower. Turn each floor in 3D, or select a plan to see the drawing full screen." />
+      <Plans3D />
       <section className="band tone-light">
         <div className="wrap plans-grid">
           {floorPlans.map((p, i) => (

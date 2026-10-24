@@ -804,3 +804,12 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
 /* spam trap: hidden from people, filled in by bots */
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .btn:disabled { opacity: 0.6; cursor: progress; }
+
+/* ---------- floor plans in 3D ---------- */
+.plan3d-band .wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+.plan3d-tabs { max-width: 100%; }
+.plan3d-canvas { min-height: 600px; }
+.plan3d-fallback { object-fit: contain; background: #fff; }
+.plan3d-canvas .sel-hint { top: 14px; bottom: auto; } /* the turn and zoom buttons sit along the bottom */
+@media (max-width: 980px) { .plan3d-canvas { min-height: 460px; } }
+@media (max-width: 520px) { .plan3d-canvas { min-height: 400px; } .plan3d-tabs button { padding: 10px 11px; } }
