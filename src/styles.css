@@ -613,7 +613,7 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
   .floors ol { max-height: none; }
   .filters { gap: 10px; }
   .filters .seg { width: 100%; }
-  .filters .seg button { flex: 1; text-align: center; }
+  .filters .seg button { flex: 1 1 auto; text-align: center; white-space: nowrap; }
   .budget { max-width: none; min-width: 0; flex-basis: 100%; }
   .results { overflow: visible; }
   .r-head { display: none; }
@@ -627,7 +627,7 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
 }
 @media (pointer: coarse) {
   .back { padding: 13px 0; }
-  input[type='range'] { height: 32px; }
+  input[type='range'] { height: 44px; }
   .check input { width: 22px; height: 22px; }
   .check { min-height: 44px; }
   .foot ul a { display: inline-block; padding-block: 8px; }
@@ -642,9 +642,9 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
 @media (max-width: 640px) {
   .label, .frame-cap, .sel-hint, .sample-note, .r-head { font-size: 12px; letter-spacing: 0.15em; }
   .seg button { font-size: 12px; padding: 13px 12px; }
-  .presets button { font-size: 11.5px; padding: 12px 14px; }
+  .presets button { font-size: 12px; padding: 13px 14px; }
   .toggle button { font-size: 12px; padding: 13px 22px; }
-  .tower-tag { padding: 10px 10px; }
+  .tower-tag { padding: 12px 10px; }
   .hide-sm { display: none; }
   .foot ul a { display: inline-block; padding-block: 10px; }
   .hero-shade { background: linear-gradient(180deg, rgba(24, 51, 42, 0.5), rgba(24, 51, 42, 0) 26%), linear-gradient(0deg, rgba(24, 51, 42, 0.94), rgba(24, 51, 42, 0.55) 40%, rgba(24, 51, 42, 0) 66%); }
@@ -844,3 +844,22 @@ button.r-row:hover, button.r-row:focus-visible { background: rgba(169, 199, 184,
   .map-steps li i { height: 2px; }
   .map-label.home .map-note { white-space: normal; max-width: 190px; line-height: 1.4; }
 }
+
+/* about page: the photo reuses the home statement figure, whose named grid area does not exist here */
+.about-grid .statement-pic { grid-area: auto; }
+
+/* ---------- phones: comfortable tap targets, no wrapping pill rows ---------- */
+@media (max-width: 760px) {
+  .btn { font-size: 12.5px; min-height: 44px; }
+  .updates a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; }
+  .field input, .field select { min-height: 44px; }
+  .size-box input { min-height: 44px; }
+  .check { min-height: 44px; display: inline-flex; align-items: center; gap: 10px; }
+  .check input { width: 22px; height: 22px; }
+  .back-link { padding: 12px 0; margin: -12px 0; }
+  /* long option rows scroll sideways instead of wrapping inside their pill */
+  .blog-filter, .plan3d-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .blog-filter::-webkit-scrollbar, .plan3d-tabs::-webkit-scrollbar { display: none; }
+  .blog-filter button, .plan3d-tabs button { flex: none; white-space: nowrap; min-height: 44px; display: inline-flex; align-items: center; }
+}
+@media (max-width: 760px) { .map-label.home .map-note { font-size: 11px; } }

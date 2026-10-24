@@ -145,12 +145,12 @@ function Plans3D() {
     window.addEventListener('keydown', onKey)
     return () => { lockScroll(false); window.removeEventListener('keydown', onKey) }
   }, [full])
-  // keep the chosen floor's button in view in the full-screen strip (it scrolls on phones)
+  // keep the chosen floor's button in view in each floor strip (they scroll sideways on phones)
   useEffect(() => {
-    if (!full) return
-    const strip = document.querySelector<HTMLElement>('.plan3d-top .plan3d-tabs')
-    const on = strip?.querySelector<HTMLElement>('[aria-pressed="true"]')
-    if (strip && on) strip.scrollTo({ left: on.offsetLeft - (strip.clientWidth - on.offsetWidth) / 2, behavior: 'smooth' })
+    document.querySelectorAll<HTMLElement>('.plan3d-tabs').forEach((strip) => {
+      const on = strip.querySelector<HTMLElement>('[aria-pressed="true"]')
+      if (on && strip.scrollWidth > strip.clientWidth) strip.scrollTo({ left: on.offsetLeft - (strip.clientWidth - on.offsetWidth) / 2, behavior: 'smooth' })
+    })
   }, [full, i])
 
   // touch: swipe sideways to turn, pinch to zoom; full screen also tilts with an up-down drag
