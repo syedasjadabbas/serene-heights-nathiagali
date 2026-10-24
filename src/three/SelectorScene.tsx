@@ -3,11 +3,21 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Edges } from '@react-three/drei'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import { TOWERS, FLOOR_H } from './Towers'
+import { TOWERS as HERO_TOWERS, FLOOR_H } from './Towers'
 import { facadeTextures, fitTexture } from './facade'
 import { availableOn, residentialFloors } from '../data/units'
 
 export type FloorRef = { tower: number; floor: number }
+
+// The selector stands the three towers in one straight row, B · A · C, facing the camera,
+// so every floor can be read and picked (the hero keeps its own staggered layout).
+const ROW_X = [0, -4.4, 4.4]
+const TOWERS = HERO_TOWERS.map((t, i) => ({ ...t, x: ROW_X[i], z: 0, rot: 0 }))
+const HOME = new THREE.Vector3(0, 2.2, 0)
+// camera distance and height angle for the overview, a chosen tower and a chosen floor
+// (`width` is how much of the scene must fit across a narrow phone screen)
+const VIEW = { all: { dist: 23.5, phi: 1.3, width: 14 }, tower: { dist: 14, phi: 1.25, width: 5.6 }, floor: { dist: 6.6, phi: 1.36, width: 4.6 } }
+const SWAY = 0.35 // the overview drifts this far either side of front-on, so the row never turns edge-on
 
 const SLAB = FLOOR_H * 0.84
 // the facade texture shows at full colour; selection tints it, sold-out floors grey it,
@@ -15,7 +25,8 @@ const SLAB = FLOOR_H * 0.84
 const COLORS = {
   slab: new THREE.Color('#ffffff'),
   slabDim: new THREE.Color('#3b5249'),
-  selected: new THREE.Color('#37584f'),
+  selected: new THREE.Color('#bfe0cf'),
+  glow: new THREE.Color('#7fb79c'),
   hover: new THREE.Color('#cfe3d8'),
   full: new THREE.Color('#9da59f'),
   stucco: new THREE.Color('#f1f3ee'),
@@ -46,7 +57,7 @@ function Floor({ t, f, props }: { t: number; f: number; props: Props }) {
   const mats = useMemo(() => {
     const tx = facadeTextures()
     const base = isLobby ? tx.lobby : isTop ? tx.top : tx.floors[(f * 7 + t * 3) % tx.floors.length]
-    const side = (width: number) => new THREE.MeshStandardMaterial({ map: fitTexture(base, width), roughness: 0.82, emissive: COLORS.selected, emissiveIntensity: 0, transparent: true })
+    const side = (width: number) => new THREE.MeshStandardMaterial({ map: fitTexture(base, width), roughness: 0.82, emissive: COLORS.glow, emissiveIntensity: 0, transparent: true })
     const short = side(spec.d), long = side(spec.w)
     const cap = new THREE.MeshStandardMaterial({ color: COLORS.stucco, roughness: 0.9, transparent: true })
     const railMat = new THREE.MeshStandardMaterial({ map: fitTexture(tx.rail, spec.w + 0.1, 0.2), transparent: true, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.4 })
@@ -60,7 +71,7 @@ function Floor({ t, f, props }: { t: number; f: number; props: Props }) {
     const sel = props.tower === t && props.floor === f
     const hov = props.hover?.tower === t && props.hover.floor === f
     const base = sel ? COLORS.selected : hov ? COLORS.hover : dimTower ? COLORS.slabDim : full ? COLORS.full : COLORS.slab
-    const glow = sel ? 0.35 : hov ? 0.12 : 0
+    const glow = sel ? 0.75 : hov ? 0.2 : 0
     const opacity = dimTower ? 0.35 : 1
     for (const m of mats.tinted) {
       m.color.lerp(base, 0.2)
@@ -204,34 +215,69 @@ function Grounds() {
 function Rig({ tower, floor, labelEls, spin }: Pick<Props, 'tower' | 'floor' | 'labelEls' | 'spin'>) {
   const controls = useRef<OrbitControlsImpl>(null)
   const { camera, size } = useThree()
-  const orbit = useMemo(() => ({ az: 0.19, target: new THREE.Vector3(0, 2.2, -1.5) }), [])
-  const want = useMemo(() => new THREE.Vector3(0, 2.2, -1.5), [])
+  const orbit = useMemo(() => ({ az: 0.19, target: HOME.clone(), r: undefined as number | undefined, pol: undefined as number | undefined }), [])
+  const want = useMemo(() => HOME.clone(), [])
   const v = useMemo(() => new THREE.Vector3(), [])
+  const sph = useMemo(() => new THREE.Spherical(), [])
   const anchors = useMemo(() => TOWERS.map((t) => new THREE.Vector3(t.x, t.floors * FLOOR_H + 1.5, t.z)), [])
+  // a camera flight runs after each selection, and stops as soon as the visitor drags
+  const fly = useMemo(() => ({ active: false, dist: VIEW.all.dist, phi: VIEW.all.phi, front: false }), [])
 
   useEffect(() => {
-    if (tower === null) want.set(0, 2.2, -1.5)
+    if (tower === null) want.copy(HOME)
     else want.set(TOWERS[tower].x, floor ? floor * FLOOR_H + FLOOR_H / 2 : (TOWERS[tower].floors * FLOOR_H) / 2, TOWERS[tower].z)
-  }, [tower, floor, want])
+    const view = tower === null ? VIEW.all : floor ? VIEW.floor : VIEW.tower
+    Object.assign(fly, { active: true, dist: view.dist, phi: view.phi, front: floor !== null && tower !== null })
+  }, [tower, floor, want, fly])
 
-  useFrame((_, dt) => {
+  useEffect(() => {
     const c = controls.current
+    if (!c) return
+    const stop = () => { fly.active = false }
+    c.addEventListener('start', stop)
+    return () => c.removeEventListener('start', stop)
+  }, [fly])
+
+  useFrame((state, dt) => {
+    const c = controls.current
+    // time-based easing, so the flight takes the same time at any frame rate
+    const ease = 1 - Math.exp(-dt * 4)
     if (c) {
-      c.target.lerp(want, 0.08)
-      c.autoRotate = tower === null
+      c.target.lerp(want, ease)
+      if (fly.active) {
+        // ease the camera in (or back out) around the new target
+        const k = ease
+        sph.setFromVector3(v.copy(camera.position).sub(c.target))
+        sph.radius += (fly.dist - sph.radius) * k
+        sph.phi += (fly.phi - sph.phi) * k
+        if (fly.front) sph.theta += (Math.atan2(Math.sin(0.12 - sph.theta), Math.cos(0.12 - sph.theta))) * k // swing round to face the floor
+        camera.position.copy(c.target).add(v.setFromSpherical(sph))
+        if (Math.abs(sph.radius - fly.dist) < 0.03 && Math.abs(sph.phi - fly.phi) < 0.005 && c.target.distanceTo(want) < 0.01) fly.active = false
+      }
+      c.autoRotate = tower === null && !fly.active
+      // turn back and forth across the front instead of all the way round
+      const az = c.getAzimuthalAngle()
+      if (az > SWAY) c.autoRotateSpeed = -0.4
+      else if (az < -SWAY) c.autoRotateSpeed = 0.4
       c.update()
     } else if (spin.current !== null) {
-      // touch: a fixed-height orbit driven by the turn buttons, with slow auto-turn
-      if (tower === null) spin.current += dt * 0.12
-      orbit.az += (spin.current - orbit.az) * Math.min(1, dt * 4)
-      orbit.target.lerp(want, 0.08)
-      const portrait = size.width < size.height
-      const r = (tower === null ? 22 : 15) * (portrait ? 1.35 : 1)
-      const pol = 1.12
+      // touch: a fixed-height orbit driven by the turn buttons; the overview sways gently
+      if (floor !== null) spin.current += (Math.round((spin.current - 0.12) / (Math.PI * 2)) * Math.PI * 2 + 0.12 - spin.current) * ease
+      const sway = tower === null ? Math.sin(state.clock.elapsedTime * 0.3) * SWAY : 0
+      orbit.az += (spin.current + sway - orbit.az) * Math.min(1, dt * 4)
+      orbit.target.lerp(want, ease)
+      // far enough back that the view's width fits the screen, whatever its shape
+      const view = tower === null ? VIEW.all : floor ? VIEW.floor : VIEW.tower
+      const cam = camera as THREE.PerspectiveCamera
+      const hfov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2) * (size.width / size.height))
+      const fit = view.width / 2 / Math.tan(hfov / 2)
+      const r = Math.max(view.dist * 0.8, Number.isFinite(fit) ? fit : view.dist) // the canvas can measure 0 x 0 before layout
+      orbit.r = orbit.r === undefined || !Number.isFinite(orbit.r) ? r : orbit.r + (r - orbit.r) * ease
+      orbit.pol = (orbit.pol ?? view.phi) + (view.phi - (orbit.pol ?? view.phi)) * ease
       camera.position.set(
-        orbit.target.x + r * Math.sin(pol) * Math.sin(orbit.az),
-        orbit.target.y + r * Math.cos(pol),
-        orbit.target.z + r * Math.sin(pol) * Math.cos(orbit.az),
+        orbit.target.x + orbit.r * Math.sin(orbit.pol) * Math.sin(orbit.az),
+        orbit.target.y + orbit.r * Math.cos(orbit.pol),
+        orbit.target.z + orbit.r * Math.sin(orbit.pol) * Math.cos(orbit.az),
       )
       camera.lookAt(orbit.target)
     }
@@ -240,9 +286,10 @@ function Rig({ tower, floor, labelEls, spin }: Pick<Props, 'tower' | 'floor' | '
       v.copy(a).project(camera)
       return { x: ((v.x + 1) / 2) * size.width, y: ((1 - v.y) / 2) * size.height, hidden: v.z > 1 }
     })
+    const gap = Math.min(150, size.width * 0.26) // labels are narrower than that on a phone
     for (let i = 0; i < pts.length; i++)
       for (let j = 0; j < i; j++)
-        if (Math.abs(pts[i].x - pts[j].x) < 150 && Math.abs(pts[i].y - pts[j].y) < 44) pts[i].y = pts[j].y - 46
+        if (Math.abs(pts[i].x - pts[j].x) < gap && Math.abs(pts[i].y - pts[j].y) < 44) pts[i].y = pts[j].y - 46
     pts.forEach((p, i) => {
       const el = labelEls.current?.[i]
       if (!el) return
@@ -254,7 +301,7 @@ function Rig({ tower, floor, labelEls, spin }: Pick<Props, 'tower' | 'floor' | '
   if (coarsePointer) return null
   return (
     <OrbitControls ref={controls} makeDefault enablePan={false} enableDamping dampingFactor={0.08}
-      minDistance={7} maxDistance={26} minPolarAngle={0.35} maxPolarAngle={1.4} autoRotateSpeed={0.5} />
+      minDistance={5} maxDistance={26} minPolarAngle={0.35} maxPolarAngle={1.45} autoRotateSpeed={0.4} />
   )
 }
 
